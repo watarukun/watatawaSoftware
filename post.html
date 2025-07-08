@@ -2,48 +2,21 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>投稿テスト</title>
+  <title>送信テスト</title>
 </head>
 <body>
-  <h1>投稿テスト</h1>
   <form id="postForm">
     <input type="text" id="name" placeholder="名前" required />
-    <br />
     <textarea id="message" placeholder="メッセージ" required></textarea>
-    <br />
-    <button type="submit">投稿</button>
+    <button type="submit">送信</button>
   </form>
-
   <script>
-    document.getElementById('postForm').addEventListener('submit', async e => {
+    document.getElementById('postForm').addEventListener('submit', e => {
       e.preventDefault();
-      const name = document.getElementById('name').value.trim();
-      const message = document.getElementById('message').value.trim();
-
-      if (!name || !message) {
-        alert('名前とメッセージを入力してください');
-        return;
-      }
-
-      try {
-        const res = await fetch('/post', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, message })
-        });
-        const result = await res.json();
-        if (result.status === 'ok') {
-          alert('投稿成功！');
-          document.getElementById('name').value = '';
-          document.getElementById('message').value = '';
-        } else {
-          alert('投稿失敗');
-        }
-      } catch (err) {
-        alert('通信エラー');
-      }
+      console.log('送信ボタン押されました');
+      // ここにfetchは書かず、動作確認だけ
+      alert('送信ボタン押されました');
     });
   </script>
-  
 </body>
 </html>
