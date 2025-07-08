@@ -1,30 +1,21 @@
 const express = require('express');
+const cors = require('cors');
 const path = require('path');
 const app = express();
 const port = process.env.PORT || 3000;
 
+app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// 静的ファイルを配信
 app.use(express.static(__dirname));
 
-// GET / でpost.htmlを返す
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'post.html'));
-});
-
-// POST /post の受信テスト
 app.post('/post', (req, res) => {
-  console.log('POST /post body:', req.body);
+  console.log(req.body);
   res.json({ status: 'ok' });
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'post.html'));
 });
-
-
 
 // 404対応（静的ファイル以外）
 app.use((req, res) => {
