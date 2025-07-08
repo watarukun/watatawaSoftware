@@ -5,11 +5,11 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(express.static(__dirname)); // index.html を含めた静的ファイルを読み込み
+app.use(express.static(__dirname));
 
 const dataFile = '/tmp/messages.txt';
 
-// POST /save にメッセージ送信
+// POST /save
 app.post('/save', (req, res) => {
   const msg = req.body.message;
   if (!msg) return res.status(400).json({ status: 'error', message: 'No message' });
@@ -23,7 +23,7 @@ app.post('/save', (req, res) => {
   }
 });
 
-// GET /messages で保存されたメッセージ一覧取得
+// GET /messages（←これだけ残す）
 app.get('/messages', (req, res) => {
   try {
     if (!fs.existsSync(dataFile)) return res.json([]);
@@ -42,7 +42,7 @@ app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, '404.html'));
 });
 
-// サーバー起動
+// 起動
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
