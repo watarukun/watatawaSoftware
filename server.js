@@ -8,7 +8,8 @@ const port = process.env.PORT || 3000;
 
 // Supabase設定
 const supabaseUrl = 'https://ftuamjkicezhtxfyujob.supabase.co';
-const supabaseKey = 'あなたのanonキー'; // 実際のanonキーに置き換えてください
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0dWFtamtpY2V6aHR4Znl1am9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5ODk0NDcsImV4cCI6MjA2NzU2NTQ0N30.fu_4lkKnjeAeJTUGwc6KTVCrN2mqberTuGfLOwaWSeA';
+
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 app.use(cors());
