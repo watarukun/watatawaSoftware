@@ -16,13 +16,10 @@
 <main><div id="text">
 <h2>掲示板</h2>
 
- 
-  <form id="postForm">
-    <input type="text" id="message" placeholder="メッセージ" required />
-    <button type="submit">投稿</button>
+<form id="postForm">
+    <input id="message" placeholder="メッセージ" required />
+    <button type="submit">送信</button>
   </form>
-
-  <h2>投稿一覧</h2>
   <ul id="messages"></ul>
 
   <script>
@@ -35,14 +32,17 @@
       const message = input.value.trim();
       if (!message) return;
 
-      await fetch('/save', {
+      const res = await fetch('/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message })
       });
 
-      input.value = '';
-      loadMessages();
+      const data = await res.json();
+      if (data.status === 'ok') {
+        input.value = '';
+        loadMessages();
+      }
     });
 
     async function loadMessages() {
@@ -58,6 +58,7 @@
 
     loadMessages();
   </script>
+
 
 
 

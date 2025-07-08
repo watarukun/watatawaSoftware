@@ -5,7 +5,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(express.static(__dirname));
+app.use(express.static(__dirname)); // index.html を含めた静的ファイルを読み込み
 
 const dataFile = '/tmp/messages.txt';
 
@@ -37,15 +37,12 @@ app.get('/messages', (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
-
-// 404対応（静的ファイル以外）
+// 404対応
 app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, '404.html'));
 });
 
+// サーバー起動
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
