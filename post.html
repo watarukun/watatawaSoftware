@@ -3,7 +3,7 @@
 <head>
 <link rel="icon" href="icon.png" type="image/x-icon">
 <meta charset="UTF-8">
-<title>watatawa Software</title>
+<title>ガフ札情報</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="ページの説明">
 <meta name="keywords" content="ページのキーワードA,B,C">
@@ -12,11 +12,32 @@
 <body>
 <div id="outer">
 <header><div id="header-inner"><h1>watatawa Software</h1><a href="index.html">トップページ</a>   <a href="download.html">ダウンロード</a>   <a href="post.html">掲示板</a>   <a href="guff.html">ガフ札情報</a>
-</div></header>
-<main><div id="text">
-<h2>NEW SUPER わたたわ RPG ダウンロード</h2>
-<h3>すべてのバージョン</h3>
-  <a>現在提供していません</a>
+  <h1>掲示板</h1>
+  <form method="POST" action="/post">
+    <input type="text" name="name" required placeholder="名前">
+    <textarea name="message" required placeholder="メッセージ"></textarea>
+    <button type="submit">投稿</button>
+  </form>
+
+  <h2>投稿一覧</h2>
+  <div id="posts"></div>
+
+  <script>
+    fetch('/posts')
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('posts').innerHTML =
+          data.map(p => `<p><strong>${p.name}</strong>: ${p.message}</p>`).join('');
+      });
+  </script>
+
+
+
+
+  
+
+
+
 </div>
 </main>
 <aside>
@@ -24,6 +45,7 @@
 <div class="side">
 <ul>
  
+
 </ul>
 </div>
 </aside>
