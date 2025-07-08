@@ -23,7 +23,7 @@ app.post('/save', (req, res) => {
   }
 });
 
-// GET /messages（←これだけ残す）
+// GET /messages
 app.get('/messages', (req, res) => {
   try {
     if (!fs.existsSync(dataFile)) return res.json([]);
@@ -37,12 +37,12 @@ app.get('/messages', (req, res) => {
   }
 });
 
-// 404対応
+// 404対応（staticでないルート用）
 app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, '404.html'));
 });
 
-// 起動
+// サーバ起動
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
