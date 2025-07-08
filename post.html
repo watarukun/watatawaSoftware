@@ -1,110 +1,48 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <link rel="icon" href="icon.png" type="image/x-icon" />
   <meta charset="UTF-8" />
-  <title>掲示板</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="ページの説明" />
-  <meta name="keywords" content="ページのキーワードA,B,C" />
-  <link rel="stylesheet" href="index.css" />
-  <style>
-    /* 簡単なナビゲーションスタイル */
-    header nav a {
-      margin-right: 15px;
-      text-decoration: none;
-      color: #0066cc;
-      font-weight: bold;
-    }
-    header nav a:hover {
-      text-decoration: underline;
-    }
-  </style>
+  <title>投稿テスト</title>
 </head>
 <body>
-  <header>
-    <nav>
-      <a href="index.html">トップページ</a>
-      <a href="download.html">ダウンロード</a>
-      <a href="post.html">掲示板</a>
-      <a href="guff.html">ガフ札情報</a>
-    </nav>
-  </header>
-
-  <main>
-    <h1>掲示板</h1>
-
-    <form id="postForm">
-      <input type="text" id="name" placeholder="名前" required />
-      <br />
-      <textarea id="message" placeholder="メッセージ" required></textarea>
-      <br />
-      <button type="submit">投稿</button>
-    </form>
-
-    <h2>投稿一覧</h2>
-    <div id="posts"></div>
-  </main>
-
-  <aside>
-    <div class="side-title">menu</div>
-    <div class="side">
-      <ul>
-        <!-- メニュー項目 -->
-      </ul>
-    </div>
-  </aside>
-
-  <footer>
-    all rights reserved ©watatawa Software 2021~2025
-  </footer>
+  <h1>投稿テスト</h1>
+  <form id="postForm">
+    <input type="text" id="name" placeholder="名前" required />
+    <br />
+    <textarea id="message" placeholder="メッセージ" required></textarea>
+    <br />
+    <button type="submit">投稿</button>
+  </form>
 
   <script>
-    async function fetchPosts() {
-      const res = await fetch('/posts');
-      const posts = await res.json();
-      const postsDiv = document.getElementById('posts');
-      postsDiv.innerHTML = '';
-      posts.forEach(post => {
-        const div = document.createElement('div');
-        div.className = 'post';
-        div.innerHTML = `
-          <div class="name">${escapeHtml(post.name)}</div>
-          <div class="date">${new Date(post.date).toLocaleString()}</div>
-          <div class="message">${escapeHtml(post.message)}</div>
-        `;
-        postsDiv.appendChild(div);
-      });
-    }
-
-    function escapeHtml(text) {
-      return text.replace(/[&<>"']/g, c =>
-        ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])
-      );
-    }
-
     document.getElementById('postForm').addEventListener('submit', async e => {
       e.preventDefault();
       const name = document.getElementById('name').value.trim();
       const message = document.getElementById('message').value.trim();
-      if (!name || !message) return alert('名前とメッセージを入力してください');
 
-      const res = await fetch('/post', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, message })
-      });
-      const result = await res.json();
-      if (result.status === 'ok') {
-        document.getElementById('name').value = '';
-        document.getElementById('message').value = '';
-        fetchPosts();
-      } else {
-        alert('投稿に失敗しました');
+      if (!name || !message) {
+        alert('名前とメッセージを入力してください');
+        return;
+      }
+
+      try {
+        const res = await fetch('/post', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, message })
+        });
+        const result = await res.json();
+        if (result.status === 'ok') {
+          alert('投稿成功！');
+          document.getElementById('name').value = '';
+          document.getElementById('message').value = '';
+        } else {
+          alert('投稿失敗');
+        }
+      } catch (err) {
+        alert('通信エラー');
       }
     });
-
-    fetchPosts();
   </script>
 </body>
 </html>

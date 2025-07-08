@@ -1,37 +1,29 @@
 const express = require('express');
-const fs = require('fs');
 const path = require('path');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// 静的ファイルはルートディレクトリで配信
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// 静的ファイルを配信
 app.use(express.static(__dirname));
 
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-
-const postsFile = path.join(__dirname, 'posts.json');
-
-app.get('/posts', (req, res) => {
-  if (!fs.existsSync(postsFile)) return res.json([]);
-  const data = fs.readFileSync(postsFile, 'utf8');
-  res.json(JSON.parse(data));
+// GET / でpost.htmlを返す
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'post.html'));
 });
 
+// POST /post の受信テスト
 app.post('/post', (req, res) => {
-  const { name, message } = req.body;
-  if (!name || !message) return res.status(400).json({ error: 'Missing data' });
-
-  const posts = fs.existsSync(postsFile) ? JSON.parse(fs.readFileSync(postsFile)) : [];
-  posts.unshift({ name, message, date: new Date().toISOString() });
-
-  fs.writeFileSync(postsFile, JSON.stringify(posts, null, 2));
+  console.log('POST /post body:', req.body);
   res.json({ status: 'ok' });
 });
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+
 
 
 // 404対応（静的ファイル以外）
