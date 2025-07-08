@@ -1,41 +1,39 @@
-// server.js
 const express = require('express');
-const fs = require('fs');
+const { createClient } = require('@supabase/supabase-js');
+const cors = require('cors');
 const path = require('path');
+
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Supabase設定
+const supabaseUrl = 'https://ftuamjkicezhtxfyujob.supabase.co';
+const supabaseKey = 'あなたのanonキー'; // 実際のanonキーに置き換えてください
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname)); // 同ディレクトリ内の静的ファイルを公開
 
-const dataFile = path.join(__dirname, 'messages.txt');
-
-// POST /save - メッセージ保存API
-app.post('/save', (req, res) => {
-  const msg = req.body.message;
-  if (!msg) return res.status(400).json({ status: 'error', message: 'No message' });
-
-  try {
-    fs.appendFileSync(dataFile, msg + '\n', 'utf8');
-    res.json({ status: 'ok' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ status: 'error', message: 'Failed to write' });
-  }
+// メッセージ一覧取得
+app.get('/messages', async (req, res) => {
+  const { data, error } = await supabase
+    .from('messages')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
 });
 
-// GET /messages - 保存されたメッセージ取得API
-app.get('/messages', (req, res) => {
-  try {
-    if (!fs.existsSync(dataFile)) return res.json([]);
-    const lines = fs.readFileSync(dataFile, 'utf8')
-      .split('\n')
-      .filter(line => line.trim() !== '');
-    res.json(lines);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ status: 'error', message: 'Failed to read' });
-  }
+// メッセージ保存
+app.post('/save', async (req, res) => {
+  const { message } = req.body;
+  if (!message) return res.status(400).json({ error: 'No message provided' });
+
+  const { data, error } = await supabase
+    .from('messages')
+    .insert([{ text: message }]);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ status: 'ok' });
 });
 
 // 404対応 - 静的ファイル以外のルート
@@ -43,7 +41,6 @@ app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, '404.html'));
 });
 
-// サーバー起動
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });

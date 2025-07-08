@@ -16,50 +16,54 @@
 <main><div id="text">
 <h2>掲示板</h2>
 
-<form id="postForm">
+<form id="form">
     <input id="message" placeholder="メッセージ" required />
-    <button type="submit">送信</button>
+    <button>送信</button>
   </form>
+
   <ul id="messages"></ul>
 
   <script>
-    const form = document.getElementById('postForm');
+    const form = document.getElementById('form');
     const input = document.getElementById('message');
     const messages = document.getElementById('messages');
 
-    form.addEventListener('submit', async e => {
-      e.preventDefault();
-      const message = input.value.trim();
-      if (!message) return;
-
-      const res = await fetch('/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message })
-      });
-
-      const data = await res.json();
-      if (data.status === 'ok') {
-        input.value = '';
-        loadMessages();
-      }
-    });
-
+    // メッセージ読み込み
     async function loadMessages() {
       const res = await fetch('/messages');
+      if (!res.ok) {
+        messages.textContent = '読み込みに失敗しました';
+        return;
+      }
       const data = await res.json();
       messages.innerHTML = '';
       data.forEach(msg => {
         const li = document.createElement('li');
-        li.textContent = msg;
+        li.textContent = msg.text;
         messages.appendChild(li);
       });
     }
 
+    // 送信処理
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+      const res = await fetch('/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text })
+      });
+      if (res.ok) {
+        input.value = '';
+        loadMessages();
+      } else {
+        alert('送信失敗');
+      }
+    });
+
     loadMessages();
   </script>
-
-
 
 
   
