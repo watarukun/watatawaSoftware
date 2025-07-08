@@ -13,7 +13,7 @@ app.get('/post.html', (req, res) => res.sendFile(path.join(__dirname, 'post.html
 app.get('/style.css', (req, res) => res.sendFile(path.join(__dirname, 'style.css'))); // あれば
 
 // 投稿データ保存先
-const postsFile = 'posts.json';
+const postsFile = 'package.json';
 
 // 投稿取得API
 app.get('/posts', (req, res) => {
@@ -31,7 +31,7 @@ app.post('/post', (req, res) => {
   posts.unshift({ name, message });
 
   fs.writeFileSync(postsFile, JSON.stringify(posts, null, 2));
-  res.redirect('/post.html');
+  res.redirect('post.html');
 });
 
 app.listen(port, () => {
