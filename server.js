@@ -1,25 +1,27 @@
-const express = require('express');
-const app = express();
-const port = process.env.PORT || 3000;
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
-let posts = [];
+const port = 3000;
 
-app.use(express.static('public'));
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+const server = http.createServer((req, res) => {
+  const filePath = path.join(__dirname,  req.url === '/' ? 'index.html' : req.url);
 
-app.get('/posts', (req, res) => {
-  res.json(posts);
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      // ファイルが存在しない → 404.html を返す
+      fs.readFile(path.join(__dirname,  '404.html'), (err404, data404) => {
+        res.writeHead(404, { 'Content-Type': 'text/html' });
+        res.end(data404 || '404 Not Found');
+      });
+    } else {
+      // ファイルが存在する → 通常表示
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end(data);
+    }
+  });
 });
 
-app.post('/post', (req, res) => {
-  const { name, message } = req.body;
-  if (name && message) {
-    posts.unshift({ name, message });
-  }
-  res.redirect('/');
-});
-
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
