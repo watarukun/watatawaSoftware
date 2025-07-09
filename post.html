@@ -15,17 +15,35 @@
 </div></header>
 <main><div id="text">
 <h2>掲示板</h2>
+<a>内容を手動更新　※1秒ごとにリアルタイムで更新されます。　JavaScriptに問題が生じ自動更新されないときに使用してください</a>
+<button onclick="fetchMessages()">更新</button>
 
-<form id="form">
-    <input id="message" placeholder="メッセージを入力" required>
-    <button type="submit">投稿</button>
-  </form>
 
-  <ul id="messages"></ul>
+ <form id="form">
+          <input id="name" placeholder="名前を入力" required>
+          <input id="message" placeholder="メッセージを入力" required>
+          <button type="submit">投稿</button>
+        </form>
+
+        <ul id="messages"></ul>
+      </div>
+    </main>
+
+    <aside>
+      <div class="side-title">menu</div>
+      <div class="side">
+        <ul>
+          <!-- メニュー項目があればここに -->
+        </ul>
+      </div>
+    </aside>
+
+    <footer>all rights reserved ©watatawa Software 2021~2025</footer>
+  </div>
 
   <script>
     const SUPABASE_URL = 'https://ftuamjkicezhtxfyujob.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0dWFtamtpY2V6aHR4Znl1am9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5ODk0NDcsImV4cCI6MjA2NzU2NTQ0N30.fu_4lkKnjeAeJTUGwc6KTVCrN2mqberTuGfLOwaWSeA'; // ←あなたのanonキー
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0dWFtamtpY2V6aHR4Znl1am9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5ODk0NDcsImV4cCI6MjA2NzU2NTQ0N30.fu_4lkKnjeAeJTUGwc6KTVCrN2mqberTuGfLOwaWSeA';
 
     const headers = {
       'Content-Type': 'application/json',
@@ -40,39 +58,38 @@
       ul.innerHTML = '';
       data.forEach(msg => {
         const li = document.createElement('li');
-        li.textContent = `[${new Date(msg.created_at).toLocaleString()}] ${msg.text}`;
+        li.textContent = msg.text;
         ul.appendChild(li);
       });
     }
 
     document.getElementById('form').addEventListener('submit', async e => {
       e.preventDefault();
-      const input = document.getElementById('message');
-      const message = input.value.trim();
-      if (!message) return;
+      const name = document.getElementById('name').value.trim();
+      const message = document.getElementById('message').value.trim();
+      if (!name || !message) return;
+
+      const now = new Date().toLocaleString();
+      const combinedText = `[${now}] ${name}：${message}`;
 
       await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
         method: 'POST',
         headers,
-        body: JSON.stringify([{ text: message }]),
+        body: JSON.stringify([{ text: combinedText }]),
       });
 
-      input.value = '';
+      document.getElementById('name').value = '';
+      document.getElementById('message').value = '';
       fetchMessages();
     });
 
     fetchMessages();
-  </script>
+    fetchMessages();         // 初回表示
+setInterval(fetchMessages, 1000); // 5秒ごとに自動更新
 
+  </script>
 </div>
 </main>
-<aside>
-<div class="side-title">menu</div>
-<div class="side">
-<ul>
+
  
 
-</ul>
-</div>
-</aside>
-<footer>all rights reserved ©watatawa Software 2021~2025</footer>
