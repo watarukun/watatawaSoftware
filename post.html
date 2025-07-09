@@ -74,24 +74,25 @@
       data.forEach(msg => map[msg.id] = msg.text);
 
       const myTrip = localStorage.getItem('tripHash');
+data.forEach(msg => {
+  let reply = '';
+  if (msg.parent_id && map[msg.parent_id]) {
+    const raw = map[msg.parent_id].replace(/\[.*?\].*?◆.*?：/, '');
+    reply = `>>>${raw.slice(0, 5)} `;
+  }
 
-      data.forEach(msg => {
-        let reply = '';
-        if (msg.parent_id && map[msg.parent_id]) {
-          const raw = map[msg.parent_id].replace(/\[.*?\].*?◆.*?：/, '');
-          reply = `>>>${raw.slice(0, 5)} `;
-        }
+  const isMyPost = myTrip && msg.text.includes(`◆${myTrip}`);
 
-        const isMyPost = myTrip && msg.text.includes(`◆${myTrip}`);
+  const li = document.createElement('li');
+  li.innerHTML = `
+    ${reply}${msg.text} <br>
+    <button onclick="setReply(${msg.id})">返信</button>
+    ${isMyPost ? `<button onclick="deleteMessage(${msg.id})">削除</button>` : ''}
+    <button onclick="reportMessage(${msg.id}, \`${msg.text}\`)">通報</button>
+  `;
+  ul.appendChild(li);
+});
 
-        const li = document.createElement('li');
-        li.innerHTML = `
-          ${reply}${msg.text} <br>
-          <button onclick="setReply(${msg.id})">返信</button>
-          ${isMyPost ? `<button onclick="deleteMessage(${msg.id})">削除</button>` : ''}
-        `;
-        ul.appendChild(li);
-      });
     }
 
     document.getElementById('form').addEventListener('submit', async e => {
@@ -166,6 +167,31 @@
     });
 
     setInterval(fetchMessages, 1000);
+
+    const FORMSPREE_ENDPOINT = "https://formspree.io/f/myzjqvpr";
+
+// 通報処理
+async function reportMessage(id, text) {
+  const trip = localStorage.getItem("posterTrip") || "（匿名）";
+  const reason = prompt("通報理由（任意）") || "";
+
+  const res = await fetch(FORMSPREE_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      message: `📢 通報\n\nID: ${id}\n本文: ${text}\n通報者トリップ: ${trip}\n理由: ${reason}`
+    })
+  });
+
+  if (res.ok) {
+    alert("通報しました。ご協力ありがとうございます。");
+  } else {
+    alert("通報に失敗しました。");
+  }
+}
+
   </script>
 </body>
 </html>
