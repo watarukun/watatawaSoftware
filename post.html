@@ -23,7 +23,8 @@
     <main>
       <div id="text">
         <h2>掲示板</h2>
-        <p>人が不快に思うような発言は控えましょう</p>
+        <p>内容を手動更新　※1秒ごとに自動更新されます。</p>
+        <button onclick="fetchMessages()">更新</button>
 
         <form id="form">
           <input id="name" placeholder="名前" required />
@@ -32,9 +33,6 @@
           <input type="hidden" id="parent_id" />
           <button type="submit">投稿</button>
         </form>
-        <p>画像を投稿したい場合はAPIの使用上無理なのでほかのサーバーあるいはGoogleドライブにアップロードしそのリンクを送信してください</p>
-                
-        
 
         <ul id="messages"></ul>
       </div>
@@ -42,110 +40,137 @@
 
     <aside>
       <div class="side-title">menu</div>
-      <div class="side">
-        <ul></ul>
-      </div>
+      <div class="side"><ul></ul></div>
     </aside>
 
     <footer>all rights reserved ©watatawa Software 2021~2025</footer>
   </div>
 
-  <script>
-    const SUPABASE_URL = 'https://ftuamjkicezhtxfyujob.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0dWFtamtpY2V6aHR4Znl1am9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5ODk0NDcsImV4cCI6MjA2NzU2NTQ0N30.fu_4lkKnjeAeJTUGwc6KTVCrN2mqberTuGfLOwaWSeA';
+<script>
+const SUPABASE_URL = 'https://ftuamjkicezhtxfyujob.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0dWFtamtpY2V6aHR4Znl1am9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5ODk0NDcsImV4cCI6MjA2NzU2NTQ0N30.fu_4lkKnjeAeJTUGwc6KTVCrN2mqberTuGfLOwaWSeA';
 
-    const headers = {
-      'Content-Type': 'application/json',
-      apikey: SUPABASE_KEY,
-      Authorization: 'Bearer ' + SUPABASE_KEY,
-    };
+const headers = {
+  'Content-Type': 'application/json',
+  apikey: SUPABASE_KEY,
+  Authorization: 'Bearer ' + SUPABASE_KEY,
+};
 
-    // 投稿取得（新しい順）
-    async function fetchMessages() {
-      const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/messages?select=id,text,parent_id,created_at&order=created_at.desc`,
-        { headers }
-      );
-      const data = await res.json();
-      const ul = document.getElementById('messages');
-      ul.innerHTML = '';
-      data.forEach((msg) => {
-        const li = document.createElement('li');
-        const reply = msg.parent_id ? `>>${msg.parent_id} ` : '';
-        li.innerHTML = `
-          ${reply}${msg.text} <br>
-          <button onclick="setReply(${msg.id})">返信</button>
-          <button onclick="deleteMessage(${msg.id})">削除</button>
-        `;
-        ul.appendChild(li);
-      });
+// SHA-256でトリップをハッシュ化
+async function sha256(message) {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
+// 投稿取得（新しい順）
+async function fetchMessages() {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/messages?select=id,text,parent_id,trip_hash,created_at&order=created_at.desc`,
+    { headers }
+  );
+  const data = await res.json();
+  const ul = document.getElementById('messages');
+  ul.innerHTML = '';
+
+  const myTripHash = localStorage.getItem('posterTripHash');
+
+  data.forEach((msg) => {
+    const reply = msg.parent_id ? `>>${msg.parent_id} ` : '';
+
+    // text例: "[2025/7/9 19:54:58] 名前：メッセージ"
+    const match = msg.text.match(/^(\[[^\]]+\] )([^：]+)：(.*)$/);
+    let displayText;
+    if (match) {
+      // [日時], 名前, メッセージを分離し、名前の後ろに◆トリップハッシュ（7文字）を挿入
+      displayText = `${match[1]}${match[2]}◆${msg.trip_hash.slice(0,7)}：${match[3]}`;
+    } else {
+      displayText = msg.text + (msg.trip_hash ? ` ◆${msg.trip_hash.slice(0,7)}` : '');
     }
 
-    // 投稿処理
-    document.getElementById('form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const name = document.getElementById('name').value.trim();
-      const trip = document.getElementById('trip').value.trim();
-      const message = document.getElementById('message').value.trim();
-      const parentId = document.getElementById('parent_id').value || null;
-      if (!name || !trip || !message) return;
+    const showDelete = myTripHash === msg.trip_hash;
 
-      localStorage.setItem('posterName', name);
-      localStorage.setItem('posterTrip', trip);
+    const li = document.createElement('li');
+    li.innerHTML = `
+      ${reply}${displayText} <br>
+      <button onclick="setReply(${msg.id})">返信</button>
+      ${showDelete ? `<button onclick="deleteMessage(${msg.id})">削除</button>` : ''}
+    `;
+    ul.appendChild(li);
+  });
+}
 
-      const now = new Date().toLocaleString();
-      const text = `[${now}] ${name}◆${trip}：${message}`;
+// 投稿処理
+document.getElementById('form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = document.getElementById('name').value.trim();
+  const trip = document.getElementById('trip').value.trim();
+  const message = document.getElementById('message').value.trim();
+  const parentId = document.getElementById('parent_id').value || null;
+  if (!name || !trip || !message) return;
 
-      await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify([{ text, parent_id: parentId }]),
-      });
+  const tripHash = await sha256(trip);
+  localStorage.setItem('posterName', name);
+  localStorage.setItem('posterTripHash', tripHash);
 
-      document.getElementById('message').value = '';
-      document.getElementById('parent_id').value = '';
-      fetchMessages();
-    });
+  const now = new Date().toLocaleString();
+  const text = `[${now}] ${name}：${message}`;
 
-    // 削除処理
-    async function deleteMessage(id) {
-      const trip = prompt('削除トリップを入力してください');
-      if (!trip) return;
+  await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify([{ text, parent_id: parentId, trip_hash: tripHash }]),
+  });
 
-      // 該当メッセージ取得
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?id=eq.${id}&select=text`, { headers });
-      const data = await res.json();
-      if (data.length === 0 || !data[0].text.includes(`◆${trip}`)) {
-        alert('トリップが一致しません');
-        return;
-      }
+  document.getElementById('message').value = '';
+  document.getElementById('parent_id').value = '';
+  fetchMessages();
+});
 
-      // 削除
-      await fetch(`${SUPABASE_URL}/rest/v1/messages?id=eq.${id}`, {
-        method: 'DELETE',
-        headers,
-      });
+// 削除処理
+async function deleteMessage(id) {
+  const myTripHash = localStorage.getItem('posterTripHash');
+  if (!myTripHash) {
+    alert('トリップが保存されていません。');
+    return;
+  }
 
-      fetchMessages();
-    }
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?id=eq.${id}&select=trip_hash`, { headers });
+  const data = await res.json();
+  if (data.length === 0) {
+    alert('メッセージが存在しません');
+    return;
+  }
+  if (data[0].trip_hash !== myTripHash) {
+    alert('自分のトリップと一致しないため削除できません');
+    return;
+  }
 
-    // 返信設定
-    function setReply(id) {
-      document.getElementById('parent_id').value = id;
-      document.getElementById('message').focus();
-    }
+  await fetch(`${SUPABASE_URL}/rest/v1/messages?id=eq.${id}`, {
+    method: 'DELETE',
+    headers,
+  });
 
-    // 名前・トリップ復元
-    window.addEventListener('DOMContentLoaded', () => {
-      const savedName = localStorage.getItem('posterName');
-      const savedTrip = localStorage.getItem('posterTrip');
-      if (savedName) document.getElementById('name').value = savedName;
-      if (savedTrip) document.getElementById('trip').value = savedTrip;
-      fetchMessages();
-    });
+  fetchMessages();
+}
 
-    // 自動更新
-    setInterval(fetchMessages, 1000);
-  </script>
+// 返信設定
+function setReply(id) {
+  document.getElementById('parent_id').value = id;
+  document.getElementById('message').focus();
+}
+
+// 名前復元（トリップはハッシュ保存済みなので表示しない）
+window.addEventListener('DOMContentLoaded', () => {
+  const savedName = localStorage.getItem('posterName');
+  if (savedName) document.getElementById('name').value = savedName;
+  fetchMessages();
+});
+
+// 自動更新
+setInterval(fetchMessages, 1000);
+</script>
 </body>
 </html>
