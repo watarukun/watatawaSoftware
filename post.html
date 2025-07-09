@@ -1,40 +1,40 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>掲示板</title>
-  <link rel="icon" href="icon.png" type="image/x-icon">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="index.css">
+  <link rel="icon" href="icon.png" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="index.css" />
 </head>
 <body>
-<div id="outer">
-  <header>
-    <div id="header-inner">
-      <h1>watatawa Software</h1>
-      <a href="index.html">トップページ</a>
-      <a href="download.html">ダウンロード</a>
-      <a href="post.html">掲示板</a>
-      <a href="guff.html">ガフ札情報</a>
-      <a href="guffimage.html">ガフの写真集</a>
-    </div>
-  </header>
+  <div id="outer">
+    <header>
+      <div id="header-inner">
+        <h1>watatawa Software</h1>
+        <a href="index.html">トップページ</a>
+        <a href="download.html">ダウンロード</a>
+        <a href="post.html">掲示板</a>
+        <a href="guff.html">ガフ札情報</a>
+        <a href="guffimage.html">ガフの写真集</a>
+      </div>
+    </header>
 
-  <main>
-    <div id="text">
-      <h2>掲示板</h2>
-
-
-<a>内容を手動更新　※自動更新が止まったときに使用してください</a>
-        <button onclick="fetchMessages()">更新</button>
+    <main>
+      <div id="text">
+        <h2>掲示板</h2>
+        <p>人が不快に思うような発言は控えましょう</p>
 
         <form id="form">
-          <input id="name" placeholder="名前" required>
-          <input id="trip" placeholder="トリップ" required>
-          <input id="message" placeholder="メッセージ" required>
-          <input type="hidden" id="parent_id">
+          <input id="name" placeholder="名前" required />
+          <input id="trip" placeholder="トリップ" required />
+          <input id="message" placeholder="メッセージ" required />
+          <input type="hidden" id="parent_id" />
           <button type="submit">投稿</button>
         </form>
+        <p>画像を投稿したい場合はAPIの使用上無理なのでほかのサーバーあるいはGoogleドライブにアップロードしそのリンクを送信してください</p>
+                
+        
 
         <ul id="messages"></ul>
       </div>
@@ -42,7 +42,9 @@
 
     <aside>
       <div class="side-title">menu</div>
-      <div class="side"><ul></ul></div>
+      <div class="side">
+        <ul></ul>
+      </div>
     </aside>
 
     <footer>all rights reserved ©watatawa Software 2021~2025</footer>
@@ -54,17 +56,20 @@
 
     const headers = {
       'Content-Type': 'application/json',
-      'apikey': SUPABASE_KEY,
-      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      apikey: SUPABASE_KEY,
+      Authorization: 'Bearer ' + SUPABASE_KEY,
     };
 
-    // 投稿取得
+    // 投稿取得（新しい順）
     async function fetchMessages() {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?select=id,text,parent_id,created_at&order=created_at.asc`, { headers });
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/messages?select=id,text,parent_id,created_at&order=created_at.desc`,
+        { headers }
+      );
       const data = await res.json();
       const ul = document.getElementById('messages');
       ul.innerHTML = '';
-      data.forEach(msg => {
+      data.forEach((msg) => {
         const li = document.createElement('li');
         const reply = msg.parent_id ? `>>${msg.parent_id} ` : '';
         li.innerHTML = `
@@ -77,7 +82,7 @@
     }
 
     // 投稿処理
-    document.getElementById('form').addEventListener('submit', async e => {
+    document.getElementById('form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = document.getElementById('name').value.trim();
       const trip = document.getElementById('trip').value.trim();
@@ -94,7 +99,7 @@
       await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
         method: 'POST',
         headers,
-        body: JSON.stringify([{ text, parent_id: parentId }])
+        body: JSON.stringify([{ text, parent_id: parentId }]),
       });
 
       document.getElementById('message').value = '';
@@ -104,7 +109,7 @@
 
     // 削除処理
     async function deleteMessage(id) {
-      const trip = prompt("削除トリップを入力してください");
+      const trip = prompt('削除トリップを入力してください');
       if (!trip) return;
 
       // 該当メッセージ取得
@@ -118,7 +123,7 @@
       // 削除
       await fetch(`${SUPABASE_URL}/rest/v1/messages?id=eq.${id}`, {
         method: 'DELETE',
-        headers
+        headers,
       });
 
       fetchMessages();
@@ -144,4 +149,3 @@
   </script>
 </body>
 </html>
-
