@@ -28,6 +28,7 @@
 
       <form id="form">
         <input id="name" placeholder="名前を入力" required>
+        <input id="trip" placeholder="トリップパス" type="password" required>
         <input id="message" placeholder="メッセージを入力" required>
         <button type="submit">投稿</button>
       </form>
@@ -35,15 +36,6 @@
       <ul id="messages"></ul>
     </div>
   </main>
-
-  <aside>
-    <div class="side-title">menu</div>
-    <div class="side">
-      <ul>
-        <!-- 任意のメニュー -->
-      </ul>
-    </div>
-  </aside>
 
   <footer>all rights reserved ©watatawa Software 2021~2025</footer>
 </div>
@@ -58,6 +50,16 @@
     'Authorization': 'Bearer ' + SUPABASE_KEY,
   };
 
+  // トリップ生成関数（SHA-1を使って先頭6文字をトリップとする）
+  async function generateTrip(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hex.slice(0, 6); // 先頭6文字だけ表示
+  }
+
   async function fetchMessages() {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?select=text,created_at&order=created_at.desc`, { headers });
     const data = await res.json();
@@ -71,28 +73,29 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    // 名前をlocalStorageから復元
+    // 名前保存
     const savedName = localStorage.getItem('posterName');
     if (savedName) {
       document.getElementById('name').value = savedName;
     }
 
-    fetchMessages(); // 初回取得
-    setInterval(fetchMessages, 1000); // 1秒ごとに自動更新
+    fetchMessages();
+    setInterval(fetchMessages, 1000);
   });
 
   document.getElementById('form').addEventListener('submit', async e => {
     e.preventDefault();
 
     const name = document.getElementById('name').value.trim();
+    const tripPass = document.getElementById('trip').value.trim();
     const message = document.getElementById('message').value.trim();
-    if (!name || !message) return;
+    if (!name || !tripPass || !message) return;
 
-    // 名前を保存
     localStorage.setItem('posterName', name);
-
+    const trip = await generateTrip(tripPass);
     const now = new Date().toLocaleString();
-    const combinedText = `[${now}] ${name}：${message}`;
+    const fullName = `${name}◆${trip}`;
+    const combinedText = `[${now}] ${fullName}：${message}`;
 
     await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
       method: 'POST',
@@ -100,10 +103,9 @@
       body: JSON.stringify([{ text: combinedText }]),
     });
 
-    document.getElementById('message').value = ''; // メッセージだけクリア
-    fetchMessages(); // 投稿後に再読み込み
+    document.getElementById('message').value = '';
+    fetchMessages();
   });
 </script>
-
 </body>
 </html>
