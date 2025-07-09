@@ -122,26 +122,31 @@
       fetchMessages();
     });
 
-    async function deleteMessage(id) {
-      const trip = prompt("削除トリップを入力してください");
-      if (!trip) return;
+ async function deleteMessage(id) {
+  const storedTripHash = localStorage.getItem('tripHash');
+  if (!storedTripHash) {
+    alert("トリップが保存されていません。");
+    return;
+  }
 
-      const tripHash = await generateTripHash(trip);
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?id=eq.${id}&select=text`, { headers });
-      const data = await res.json();
+  // メッセージ取得
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?id=eq.${id}&select=text`, { headers });
+  const data = await res.json();
 
-      if (!data.length || !data[0].text.includes(`◆${tripHash}`)) {
-        alert('トリップが一致しません');
-        return;
-      }
+  if (!data.length || !data[0].text.includes(`◆${storedTripHash}`)) {
+    alert('このメッセージは削除できません（トリップが一致しません）');
+    return;
+  }
 
-      await fetch(`${SUPABASE_URL}/rest/v1/messages?id=eq.${id}`, {
-        method: 'DELETE',
-        headers
-      });
+  // 削除
+  await fetch(`${SUPABASE_URL}/rest/v1/messages?id=eq.${id}`, {
+    method: 'DELETE',
+    headers
+  });
 
-      fetchMessages();
-    }
+  fetchMessages();
+}
+
 
     function setReply(id) {
       document.getElementById('parent_id').value = id;
