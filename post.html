@@ -6,6 +6,12 @@
   <link rel="icon" href="icon.png" type="image/x-icon" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="index.css" />
+  <style>
+    ul { list-style-type: none; padding-left: 0; }
+    .thread > div { cursor: pointer; background: #eee; padding: 8px; margin-top: 8px; }
+    .thread > ul { margin-left: 20px; padding-left: 10px; border-left: 2px solid #ccc; }
+    button { margin-right: 5px; }
+  </style>
 </head>
 <body>
   <div id="outer">
@@ -23,14 +29,15 @@
     <main>
       <div id="text">
         <h2>掲示板</h2>
-    <p>人が不快にならないような発言を心がけましょう</p>
+        <p>人が不快にならないような発言を心がけましょう</p>
 
         <form id="form">
           <input id="name" placeholder="名前" required />
           <input id="trip" placeholder="トリップ" required />
           <input id="message" placeholder="メッセージ" required />
           <input type="hidden" id="parent_id" />
-          <button type="submit">投稿</button>
+          <button type="submit" id="submitBtn">スレッド作成</button>
+          <button type="button" id="cancelReplyBtn" style="display:none;">返信キャンセル</button>
         </form>
 
         <ul id="messages"></ul>
@@ -55,46 +62,93 @@
       Authorization: 'Bearer ' + SUPABASE_KEY,
     };
 
+    // トリップハッシュ生成
     function generateTripHash(trip) {
       const encoder = new TextEncoder();
       const data = encoder.encode(trip);
       return crypto.subtle.digest('SHA-256', data).then(hashBuffer => {
         const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 12); // 短縮表示
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 12);
       });
     }
 
+    // 折りたたみ開いているスレッドID管理用
+    const openedThreads = new Set();
+
     async function fetchMessages() {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?select=id,text,parent_id,created_at&order=created_at.desc`, { headers });
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?select=id,text,parent_id,created_at&order=created_at.asc`, { headers });
       const data = await res.json();
       const ul = document.getElementById('messages');
       ul.innerHTML = '';
 
+      const myTrip = localStorage.getItem('tripHash');
       const map = {};
       data.forEach(msg => map[msg.id] = msg.text);
 
-      const myTrip = localStorage.getItem('tripHash');
-data.forEach(msg => {
-  let reply = '';
-  if (msg.parent_id && map[msg.parent_id]) {
-    const raw = map[msg.parent_id].replace(/\[.*?\].*?◆.*?：/, '');
-    reply = `>>>${raw.slice(0, 5)} `;
-  }
+      // スレッド（親投稿）と返信に分離
+      const threads = data.filter(msg => !msg.parent_id);
+      const replies = data.filter(msg => msg.parent_id);
 
-  const isMyPost = myTrip && msg.text.includes(`◆${myTrip}`);
+      // 最新順で表示したいので逆順に
+      threads.reverse().forEach(thread => {
+        const threadLi = document.createElement('li');
+        threadLi.classList.add('thread');
 
-  const li = document.createElement('li');
-  li.innerHTML = `
-    ${reply}${msg.text} <br>
-    <button onclick="setReply(${msg.id})">返信</button>
-    ${isMyPost ? `<button onclick="deleteMessage(${msg.id})">削除</button>` : ''}
-    <button onclick="reportMessage(${msg.id}, \`${msg.text}\`)">通報</button>
-  `;
-  ul.appendChild(li);
-});
+        const isMine = myTrip && thread.text.includes(`◆${myTrip}`);
 
+        // ヘッダー（スレッド内容とボタン群）
+        const headerDiv = document.createElement('div');
+        headerDiv.innerHTML = `
+          ${thread.text} <br>
+          <button onclick="setReply(${thread.id})">返信</button>
+          ${isMine ? `<button onclick="deleteMessage(${thread.id})">削除</button>` : ''}
+          <button onclick="reportMessage(${thread.id}, \`${thread.text}\`)">通報</button>
+          <button class="toggleBtn">${openedThreads.has(thread.id) ? '▲' : '▼'}</button>
+        `;
+        headerDiv.style.userSelect = "none";
+
+        // 折りたたみ切り替え
+        headerDiv.querySelector('.toggleBtn').addEventListener('click', e => {
+          e.stopPropagation();
+          const repliesUl = threadLi.querySelector('ul');
+          if (repliesUl.style.display === 'none') {
+            repliesUl.style.display = 'block';
+            openedThreads.add(thread.id);
+            e.target.textContent = '▲';
+          } else {
+            repliesUl.style.display = 'none';
+            openedThreads.delete(thread.id);
+            e.target.textContent = '▼';
+          }
+        });
+
+        threadLi.appendChild(headerDiv);
+
+        // 返信リスト
+        const repliesUl = document.createElement('ul');
+        repliesUl.style.display = openedThreads.has(thread.id) ? 'block' : 'none';
+
+        replies.filter(r => r.parent_id === thread.id).forEach(reply => {
+          const raw = map[thread.id].replace(/\[.*?\].*?◆.*?：/, '');
+          const replyText = `>>>${raw.slice(0, 5)} ${reply.text}`;
+          const isMineReply = myTrip && reply.text.includes(`◆${myTrip}`);
+
+          const replyLi = document.createElement('li');
+          replyLi.innerHTML = `
+            ${replyText} <br>
+            <button onclick="setReply(${thread.id})">返信</button>
+            ${isMineReply ? `<button onclick="deleteMessage(${reply.id})">削除</button>` : ''}
+            <button onclick="reportMessage(${reply.id}, \`${reply.text}\`)">通報</button>
+          `;
+          repliesUl.appendChild(replyLi);
+        });
+
+        threadLi.appendChild(repliesUl);
+        ul.appendChild(threadLi);
+      });
     }
 
+    // 投稿処理
     document.getElementById('form').addEventListener('submit', async e => {
       e.preventDefault();
       const name = document.getElementById('name').value.trim();
@@ -120,40 +174,68 @@ data.forEach(msg => {
 
       document.getElementById('message').value = '';
       document.getElementById('parent_id').value = '';
+
+      // 投稿後はボタンを「スレッド作成」に戻す＆返信キャンセル非表示
+      setFormToThreadMode();
+
       fetchMessages();
     });
 
- async function deleteMessage(id) {
-  const storedTripHash = localStorage.getItem('tripHash');
-  if (!storedTripHash) {
-    alert("トリップが保存されていません。");
-    return;
-  }
+    // 削除処理
+    async function deleteMessage(id) {
+      const storedTripHash = localStorage.getItem('tripHash');
+      if (!storedTripHash) {
+        alert("トリップが保存されていません。");
+        return;
+      }
 
-  // メッセージ取得
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?id=eq.${id}&select=text`, { headers });
-  const data = await res.json();
+      // メッセージ取得
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?id=eq.${id}&select=text`, { headers });
+      const data = await res.json();
 
-  if (!data.length || !data[0].text.includes(`◆${storedTripHash}`)) {
-    alert('このメッセージは削除できません（トリップが一致しません）');
-    return;
-  }
+      if (!data.length || !data[0].text.includes(`◆${storedTripHash}`)) {
+        alert('このメッセージは削除できません（トリップが一致しません）');
+        return;
+      }
 
-  // 削除
-  await fetch(`${SUPABASE_URL}/rest/v1/messages?id=eq.${id}`, {
-    method: 'DELETE',
-    headers
-  });
+      // 削除
+      await fetch(`${SUPABASE_URL}/rest/v1/messages?id=eq.${id}`, {
+        method: 'DELETE',
+        headers
+      });
 
-  fetchMessages();
-}
+      fetchMessages();
+    }
 
-
+    // 返信設定
     function setReply(id) {
       document.getElementById('parent_id').value = id;
       document.getElementById('message').focus();
+      setFormToReplyMode();
     }
 
+    // フォームのボタン切り替え
+    function setFormToReplyMode() {
+      const submitBtn = document.getElementById('submitBtn');
+      const cancelReplyBtn = document.getElementById('cancelReplyBtn');
+      submitBtn.textContent = '返信投稿';
+      cancelReplyBtn.style.display = 'inline-block';
+    }
+
+    function setFormToThreadMode() {
+      const submitBtn = document.getElementById('submitBtn');
+      const cancelReplyBtn = document.getElementById('cancelReplyBtn');
+      submitBtn.textContent = 'スレッド作成';
+      cancelReplyBtn.style.display = 'none';
+      document.getElementById('parent_id').value = '';
+    }
+
+    document.getElementById('cancelReplyBtn').addEventListener('click', () => {
+      setFormToThreadMode();
+      document.getElementById('message').value = '';
+    });
+
+    // ページ読み込み時に保存値セット＆メッセージ読み込み
     window.addEventListener('DOMContentLoaded', async () => {
       const savedName = localStorage.getItem('posterName');
       const savedTrip = localStorage.getItem('posterTrip');
@@ -166,32 +248,32 @@ data.forEach(msg => {
       fetchMessages();
     });
 
+    // 自動更新
     setInterval(fetchMessages, 1000);
 
+    // 通報機能用エンドポイント
     const FORMSPREE_ENDPOINT = "https://formspree.io/f/myzjqvpr";
 
-// 通報処理
-async function reportMessage(id, text) {
-  const trip = localStorage.getItem("posterTrip") || "（匿名）";
-  const reason = prompt("通報理由（任意）") || "";
+    async function reportMessage(id, text) {
+      const trip = localStorage.getItem("posterTrip") || "（匿名）";
+      const reason = prompt("通報理由（任意）") || "";
 
-  const res = await fetch(FORMSPREE_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      message: `📢 通報\n\nID: ${id}\n本文: ${text}\n通報者トリップ: ${trip}\n理由: ${reason}`
-    })
-  });
+      const res = await fetch(FORMSPREE_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          message: `📢 通報\n\nID: ${id}\n本文: ${text}\n通報者トリップ: ${trip}\n理由: ${reason}`
+        })
+      });
 
-  if (res.ok) {
-    alert("通報しました。ご協力ありがとうございます。");
-  } else {
-    alert("通報に失敗しました。");
-  }
-}
-
+      if (res.ok) {
+        alert("通報しました。ご協力ありがとうございます。");
+      } else {
+        alert("通報に失敗しました。");
+      }
+    }
   </script>
 </body>
 </html>
