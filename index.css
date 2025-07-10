@@ -113,3 +113,16 @@ footer {
 	height: auto;
 }
 }
+#outer {
+  max-width: 800px;
+  margin: 0 auto;
+}
+#message-top {
+  min-height: 10px;
+}
+
+#message-reply {
+  min-height: 50px;
+}
+
+

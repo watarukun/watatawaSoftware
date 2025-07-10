@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <link rel="icon" href="icon.png" type="image/x-icon">
+<meta charset="UTF-8">
+<title>ガフ札情報</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="ページの説明">
+<meta name="keywords" content="ページのキーワードA,B,C">
+<link rel="stylesheet" href="index.css">
+<meta charset="UTF-8" />
+<title>チャット</title>
+<style>
+  body { font-family: sans-serif; max-width: 600px; margin: auto; }
+  #messages div {
+    display: block;
+    border-bottom: 1px solid #ccc;
+    margin: 8px 0;
+    padding: 4px;
+    position: relative;
+  }
+  .message-info {
+    white-space: nowrap;
+    font-weight: bold;
+    user-select: none;
+    display: inline-block;
+    margin-right: 8px;
+  }
+  .message-content {
+    white-space: pre-wrap;
+    display: inline-block;
+    vertical-align: middle;
+    max-width: 70%;
+    word-break: break-word;
+  }
+  .timestamp {
+    color: #666;
+    font-size: 0.75em;
+    margin-left: 8px;
+    user-select: none;
+  }
+  .delete-btn {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #c00;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0 6px;
+    line-height: 1;
+  }
+  .delete-btn:hover {
+    color: #f00;
+  }
+  img {
+    max-width: 200px;
+    display: block;
+    margin-top: 4px;
+  }
+  input, button {
+    margin: 4px 0;
+    padding: 8px;
+    box-sizing: border-box;
+  }
+  #chat {
+    display: none;
+  }
+  #partner-list {
+    margin-bottom: 12px;
+  }
+  #partner-list span {
+    display: inline-block;
+    background: #eee;
+    padding: 4px 8px;
+    margin: 0 6px 6px 0;
+    border-radius: 4px;
+    cursor: pointer;
+    user-select: none;
+  }
+  #partner-list span.selected {
+    background: #b4d5ff;
+    font-weight: bold;
+  }
+  #partner-add {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  #partner-add input {
+    flex-grow: 1;
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js" defer></script>
+</head>
+<body>
+    <div id="outer">
+<header><div id="header-inner"><h1>watatawa Software</h1><a href="index.html">トップページ</a>   <a href="download.html">ダウンロード</a>   <a href="post.html">掲示板</a>   <a href="guff.html">ガフ札情報</a>  <a href="guffimage.html">ガフの写真集</a>  <a href="chat.html">チャット</a></header>
+<main><div id="text">
+<h2>個人チャット</h2>
+
+<div id="auth">
+  <input id="nickname" placeholder="ニックネーム" />
+  <input id="password" type="password" placeholder="パスワード" />
+  <button id="signup-btn">新規登録</button>
+  <button id="login-btn">ログイン</button>
+</div>
+
+<div id="chat">
+  <p>あなたのニックネーム: <span id="my-nickname"></span></p>
+
+  <div id="partner-add">
+    <input id="new-partner" placeholder="新しい相手のニックネームを追加" />
+    <button id="add-partner-btn">追加</button>
+  </div>
+
+  <div id="partner-list" title="相手をクリックで切替"></div>
+
+  <p>現在の相手: <span id="current-partner"></span></p>
+
+  <p id="unread-badge" style="color: red;"></p>
+
+  <div id="messages"></div>
+
+  <input id="msg" placeholder="メッセージ" />
+  <input type="file" id="file" />
+  <button id="send-btn">送信</button>
+  <button id="logout-btn">ログアウト</button>
+</div>
+
+</div>
+</main>
+<aside>
+<div class="side-title">menu</div>
+<div class="side">
+<ul>
+ 
+
+</ul>
+</div>
+</aside>
+<footer>all rights reserved ©watatawa Software 2021~2025</footer>
+
+<script defer>
+document.addEventListener("DOMContentLoaded", () => {
+  const supabaseUrl = "https://mbjvhxpozxylwcemnbcr.supabase.co";
+  const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ianZoeHBvenh5bHdjZW1uYmNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIxMzM3MzAsImV4cCI6MjA2NzcwOTczMH0.JddcQ5SoHfR-OWGma__X8iP0OphdnLHOPdYjm3Ca2Qo";
+  const supabaseClient = supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+  let currentUser = null;
+  let currentPartner = null;
+  let messagePolling = null;
+  let partners = [];
+
+  // DOM Elements
+  const partnerListEl = document.getElementById("partner-list");
+  const currentPartnerEl = document.getElementById("current-partner");
+  const unreadBadgeEl = document.getElementById("unread-badge");
+
+  document.getElementById("signup-btn").onclick = signup;
+  document.getElementById("login-btn").onclick = login;
+  document.getElementById("send-btn").onclick = sendMessage;
+  document.getElementById("logout-btn").onclick = logout;
+  document.getElementById("add-partner-btn").onclick = addPartner;
+
+  // ローカルストレージに保存していたuser情報を復元するがパートナーはDBから取得する
+  const storedUser = localStorage.getItem("user");
+  if (storedUser) {
+    currentUser = JSON.parse(storedUser);
+    showChat();
+    loadPartnersFromDB();
+  }
+
+  function insertLineBreaks(text, maxLen = 30) {
+    const regex = new RegExp(`.{1,${maxLen}}`, 'g');
+    return (text.match(regex) || []).join('\n');
+  }
+
+  async function signup() {
+    const nickname = document.getElementById("nickname").value.trim();
+    const password = document.getElementById("password").value;
+    if (!nickname || !password) return alert("ニックネームとパスワードを入力してください");
+
+    const { data: exists, error: existsErr } = await supabaseClient
+      .from("users")
+      .select("id")
+      .eq("nickname", nickname)
+      .single();
+    if (exists) return alert("ニックネームは既に使われています");
+    if (existsErr && existsErr.code !== 'PGRST116') return alert("登録エラー：" + existsErr.message);
+
+    const { error } = await supabaseClient
+      .from("users")
+      .insert({ nickname, password });
+
+    if (error) return alert("登録失敗: " + error.message);
+    alert("登録成功！ログインしてください");
+  }
+
+  async function login() {
+    const nickname = document.getElementById("nickname").value.trim();
+    const password = document.getElementById("password").value;
+    if (!nickname || !password) return alert("ニックネームとパスワードを入力してください");
+
+    const { data, error } = await supabaseClient
+      .from("users")
+      .select("*")
+      .eq("nickname", nickname)
+      .eq("password", password)
+      .single();
+
+    if (error || !data) return alert("ログイン失敗: ニックネームまたはパスワードが間違っています");
+
+    currentUser = data;
+    localStorage.setItem("user", JSON.stringify(currentUser));
+    showChat();
+    loadPartnersFromDB();
+  }
+
+  function showChat() {
+    document.getElementById("auth").style.display = "none";
+    document.getElementById("chat").style.display = "block";
+
+    document.getElementById("my-nickname").textContent = currentUser.nickname;
+
+    if (messagePolling) clearInterval(messagePolling);
+    messagePolling = setInterval(loadMessages, 5000);
+  }
+
+  async function sendMessage() {
+    if (!currentPartner) return alert("会話する相手を選択してください");
+
+    const content = document.getElementById("msg").value.trim();
+    if (!content && !document.getElementById("file").files.length) return alert("メッセージか画像を入力してください");
+
+    const { data: toUser, error: toError } = await supabaseClient
+      .from("users")
+      .select("*")
+      .eq("nickname", currentPartner)
+      .single();
+
+    if (toError || !toUser) return alert("相手のニックネームが見つかりません");
+
+    let image_url = null;
+    const fileInput = document.getElementById("file");
+    if (fileInput.files.length > 0) {
+      const file = fileInput.files[0];
+      const path = `${currentUser.id}/${Date.now()}-${file.name}`;
+      const { error: uploadError } = await supabaseClient.storage
+        .from("chat-images")
+        .upload(path, file);
+
+      if (uploadError) return alert("画像アップロード失敗: " + uploadError.message);
+
+      const { data: urlData } = supabaseClient.storage
+        .from("chat-images")
+        .getPublicUrl(path);
+
+      image_url = urlData.publicUrl;
+    }
+
+    const { error } = await supabaseClient
+      .from("messages")
+      .insert({
+        sender_id: currentUser.id,
+        receiver_id: toUser.id,
+        content,
+        image_url
+      });
+
+    if (error) return alert("メッセージ送信失敗: " + error.message);
+
+    document.getElementById("msg").value = "";
+    fileInput.value = "";
+
+    await addPartnerToDB(currentPartner);
+    loadMessages();
+  }
+
+  async function loadMessages() {
+    if (!currentPartner) return;
+
+    const { data: toUser } = await supabaseClient
+      .from("users")
+      .select("*")
+      .eq("nickname", currentPartner)
+      .single();
+
+    if (!toUser) return;
+
+    const { data, error } = await supabaseClient
+      .from("messages")
+      .select("*")
+      .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+      .order("created_at", { ascending: true });
+
+    if (error) return console.error(error);
+
+    const filtered = data.filter(msg =>
+      (msg.sender_id === currentUser.id && msg.receiver_id === toUser.id) ||
+      (msg.sender_id === toUser.id && msg.receiver_id === currentUser.id)
+    );
+
+    const box = document.getElementById("messages");
+    box.innerHTML = "";
+
+    let unreadCount = 0;
+
+    for (const msg of filtered) {
+      const div = document.createElement("div");
+
+      const senderLabel = msg.sender_id === currentUser.id ? "自分" : "相手";
+      const messageText = insertLineBreaks(msg.content || "", 30);
+      const timestamp = new Date(msg.created_at).toLocaleString();
+
+      div.innerHTML = `
+        <span class="message-info">${senderLabel}</span>
+        <span class="message-content">${messageText}</span>
+        <span class="timestamp">${timestamp}</span>
+      `;
+
+      if (msg.image_url) {
+        const img = document.createElement("img");
+        img.src = msg.image_url;
+        div.appendChild(img);
+      }
+
+      if (msg.sender_id === currentUser.id) {
+        const btn = document.createElement("button");
+        btn.className = "delete-btn";
+        btn.textContent = "✖";
+        btn.title = "メッセージを削除";
+        btn.onclick = () => deleteMessage(msg.id);
+        div.appendChild(btn);
+      }
+
+      box.appendChild(div);
+
+      // 簡易未読判定
+      if (msg.receiver_id === currentUser.id && !msg.read) {
+        unreadCount++;
+      }
+    }
+
+    unreadBadgeEl.textContent = unreadCount > 0 ? `未読メッセージ: ${unreadCount}` : "";
+  }
+
+  async function deleteMessage(id) {
+    const { error } = await supabaseClient
+      .from("messages")
+      .delete()
+      .eq("id", id)
+      .eq("sender_id", currentUser.id);
+
+    if (error) return alert("削除失敗: " + error.message);
+
+    loadMessages();
+  }
+
+  // パートナー一覧をDBから取得
+  async function loadPartnersFromDB() {
+    if (!currentUser) return;
+
+    const { data, error } = await supabaseClient
+      .from("user_partners")
+      .select("partner_nickname")
+      .eq("user_id", currentUser.id);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    partners = data.map(p => p.partner_nickname);
+    renderPartnerList();
+
+    if (partners.length > 0) {
+      setCurrentPartner(partners[0]);
+    }
+  }
+
+  // パートナー一覧をDBに追加（重複チェックはDBのユニーク制約に任せる）
+  async function addPartnerToDB(nick) {
+    if (!currentUser) return;
+    if (!nick || partners.includes(nick) || nick === currentUser.nickname) return;
+
+    const { error } = await supabaseClient
+      .from("user_partners")
+      .insert({ user_id: currentUser.id, partner_nickname: nick });
+
+    if (error) {
+      if (error.code === "23505") {
+        // 重複エラーは無視
+      } else {
+        alert("パートナー追加失敗: " + error.message);
+      }
+      return;
+    }
+
+    partners.push(nick);
+    renderPartnerList();
+  }
+
+  function renderPartnerList() {
+    partnerListEl.innerHTML = "";
+    partners.forEach(p => {
+      const sp = document.createElement("span");
+      sp.textContent = p;
+      sp.className = (p === currentPartner) ? "selected" : "";
+      sp.onclick = () => setCurrentPartner(p);
+      partnerListEl.appendChild(sp);
+    });
+  }
+
+  function setCurrentPartner(nick) {
+    currentPartner = nick;
+    currentPartnerEl.textContent = nick;
+    renderPartnerList();
+    loadMessages();
+  }
+
+  function addPartner() {
+    const input = document.getElementById("new-partner");
+    const val = input.value.trim();
+    if (!val) return alert("相手のニックネームを入力してください");
+    if (val === currentUser.nickname) return alert("自分のニックネームは追加できません");
+    if (partners.includes(val)) return alert("すでにリストにあります");
+
+    addPartnerToDB(val);
+    input.value = "";
+  }
+
+  function logout() {
+    currentUser = null;
+    currentPartner = null;
+    partners = [];
+    localStorage.removeItem("user");
+    document.getElementById("chat").style.display = "none";
+    document.getElementById("auth").style.display = "block";
+    document.getElementById("messages").innerHTML = "";
+    document.getElementById("my-nickname").textContent = "";
+    currentPartnerEl.textContent = "";
+    unreadBadgeEl.textContent = "";
+    document.getElementById("nickname").value = "";
+    document.getElementById("password").value = "";
+    document.getElementById("msg").value = "";
+    document.getElementById("new-partner").value = "";
+    if (messagePolling) clearInterval(messagePolling);
+  }
+});
+</script>
+</body>
+</html>
