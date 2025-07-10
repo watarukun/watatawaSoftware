@@ -61,8 +61,6 @@
     margin-top: 4px;
   }
   input, button {
-    margin: 4px 0;
-    padding: 8px;
     box-sizing: border-box;
   }
   #chat {
@@ -72,17 +70,31 @@
     margin-bottom: 12px;
   }
   #partner-list span {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
     background: #eee;
     padding: 4px 8px;
     margin: 0 6px 6px 0;
     border-radius: 4px;
     cursor: pointer;
     user-select: none;
+    position: relative;
   }
   #partner-list span.selected {
     background: #b4d5ff;
     font-weight: bold;
+  }
+  #partner-list .remove-btn {
+    margin-left: 6px;
+    font-weight: bold;
+    color: #900;
+    cursor: pointer;
+    user-select: none;
+    font-size: 14px;
+    line-height: 1;
+  }
+  #partner-list .remove-btn:hover {
+    color: #f00;
   }
   #partner-add {
     display: flex;
@@ -91,6 +103,42 @@
   }
   #partner-add input {
     flex-grow: 1;
+    padding: 8px;
+  }
+  /* 投稿送信バー全体 */
+  #send-bar {
+    display: flex;
+    align-items: center;
+    background-color: #222; /* 黒寄りのグレー */
+    padding: 6px 10px;
+    border-radius: 6px;
+    gap: 8px;
+    margin-top: 12px;
+  }
+ 
+  /* メッセージ入力欄 */
+  #msg {
+    flex-grow: 1;
+    padding: 8px;
+    height: 3em; /* 2行分くらい */
+    resize: none;
+    border-radius: 4px;
+    border: none;
+    font-size: 1em;
+    line-height: 1.4em;
+  }
+  /* 送信ボタン */
+  #send-btn {
+    background-color: #444;
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  #send-btn:hover {
+    background-color: #666;
   }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js" defer></script>
@@ -109,25 +157,26 @@
 </div>
 
 <div id="chat">
-  <p>あなたのニックネーム: <span id="my-nickname"></span></p>
+  <p>あなたのニックネーム: <span id="my-nickname"></span></p> <button id="logout-btn">ログアウト</button>
 
   <div id="partner-add">
     <input id="new-partner" placeholder="ニックネームで追加" />
     <button id="add-partner-btn">追加</button>
   </div>
 
-  <div id="partner-list" title="相手をクリックで切替"></div>
+  <div id="partner-list" title="トーク相手を変更"></div>
 
   <p>To: <span id="current-partner"></span></p>
 
   <p id="unread-badge" style="color: red;"></p>
 
   <div id="messages"></div>
-
+ 
   <input id="msg" placeholder="メッセージ" />
-  <input type="file" id="file" />
+
   <button id="send-btn">送信</button>
-  <button id="logout-btn">ログアウト</button>
+   <input type="file" id="file" />
+ 
 </div>
 
 </div>
@@ -376,8 +425,10 @@ document.addEventListener("DOMContentLoaded", () => {
     partners = data.map(p => p.partner_nickname);
     renderPartnerList();
 
-    if (partners.length > 0) {
+    if (partners.length > 0 && !currentPartner) {
       setCurrentPartner(partners[0]);
+    } else if (partners.length === 0) {
+      setCurrentPartner(null);
     }
   }
 
@@ -403,20 +454,56 @@ document.addEventListener("DOMContentLoaded", () => {
     renderPartnerList();
   }
 
+  // パートナー一覧描画（削除ボタン付き）
   function renderPartnerList() {
     partnerListEl.innerHTML = "";
-    partners.forEach(p => {
+    partners.forEach((p, i) => {
       const sp = document.createElement("span");
       sp.textContent = p;
       sp.className = (p === currentPartner) ? "selected" : "";
       sp.onclick = () => setCurrentPartner(p);
+
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "✖";
+      delBtn.title = "パートナーを削除";
+      delBtn.className = "del-partner-btn";
+      delBtn.onclick = async (e) => {
+        e.stopPropagation();
+        if (!confirm(`「${p}」をトークルームから削除しますか？（受信するには再度追加する必要があります）`)) return;
+
+        const { error } = await supabaseClient
+          .from("user_partners")
+          .delete()
+          .eq("user_id", currentUser.id)
+          .eq("partner_nickname", p);
+
+        if (error) {
+          alert("削除失敗: " + error.message);
+          return;
+        }
+
+        partners.splice(i, 1);
+        renderPartnerList();
+
+        if (currentPartner === p) {
+          if (partners.length > 0) {
+            setCurrentPartner(partners[0]);
+          } else {
+            setCurrentPartner(null);
+            document.getElementById("messages").innerHTML = "";
+            unreadBadgeEl.textContent = "";
+          }
+        }
+      };
+
+      sp.appendChild(delBtn);
       partnerListEl.appendChild(sp);
     });
   }
 
   function setCurrentPartner(nick) {
     currentPartner = nick;
-    currentPartnerEl.textContent = nick;
+    currentPartnerEl.textContent = nick || "";
     renderPartnerList();
     loadMessages();
   }
