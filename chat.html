@@ -275,7 +275,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("my-nickname").textContent = currentUser.nickname;
 
     if (messagePolling) clearInterval(messagePolling);
-    messagePolling = setInterval(loadMessages, 5000);
+    messagePolling = setInterval(loadMessages, 1000);
   }
 
   async function sendMessage() {
