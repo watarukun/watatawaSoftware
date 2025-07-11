@@ -9,6 +9,8 @@
 <meta name="keywords" content="ページのキーワードA,B,C">
 <link rel="stylesheet" href="index.css">
 <meta charset="UTF-8" />
+<audio id="remote-audio" autoplay></audio>
+
 <title>チャット</title>
 <style>
   body { font-family: sans-serif; max-width: 600px; margin: auto; }
@@ -591,7 +593,7 @@ async function startCall() {
   const offer = await peerConnection.createOffer();
   await peerConnection.setLocalDescription(offer);
 
-  // 重複通話を避けるため削除（任意）
+  // 重複通話を避けるため削除
   await supabaseClient.from("calls")
     .delete()
     .eq("caller_id", currentUser.id)
@@ -605,23 +607,26 @@ async function startCall() {
   });
 
   showCallPopup("発信中...");
-  callAudio.play();
+  callAudio.play().catch(e => console.warn("発信音再生失敗:", e));
 }
 
 async function prepareCallConnection(isCaller) {
-  peerConnection = new RTCPeerConnection();
+  peerConnection = new RTCPeerConnection({
+    iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+  });
 
   localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
-peerConnection.ontrack = event => {
-  const remoteAudio = document.createElement("audio");
-  remoteAudio.srcObject = event.streams[0];
-  remoteAudio.autoplay = true;
-  remoteAudio.controls = true; // デバッグ時に可視化
-  document.body.appendChild(remoteAudio); // DOMに追加しておく
-};
-
+  peerConnection.ontrack = event => {
+    console.log("✅ 相手の音声トラック受信:", event.streams);
+    const remoteAudio = document.getElementById("remote-audio");
+    remoteAudio.srcObject = event.streams[0];
+    remoteAudio.muted = false;
+    remoteAudio.play().catch(e => {
+      console.warn("音声再生失敗:", e);
+    });
+  };
 
   peerConnection.onicecandidate = async (event) => {
     if (event.candidate) {
@@ -660,6 +665,7 @@ function endCall() {
   callPopup.style.display = "none";
   clearInterval(callTimerInterval);
 }
+
 supabaseClient.channel("calls")
   .on("postgres_changes", {
     event: "INSERT",
@@ -670,7 +676,7 @@ supabaseClient.channel("calls")
 
     if (call.callee_id !== currentUser.id) return; // 自分宛のみ処理
 
-    // 着信：オファー受信
+    // オファー受信
     if (call.type === "offer" && call.sdp_offer) {
       const callerUser = await supabaseClient
         .from("users")
@@ -678,12 +684,9 @@ supabaseClient.channel("calls")
         .eq("id", call.caller_id)
         .single();
 
-        callAudio.pause();  // 念のため停止
-callAudio.currentTime = 0;
-callAudio.play().catch(e => {
-  console.warn("音声再生失敗:", e);
-});
-
+      callAudio.pause();
+      callAudio.currentTime = 0;
+      callAudio.play().catch(e => console.warn("着信音再生失敗:", e));
 
       const accept = confirm(`「${callerUser.data.nickname}」から通話着信！受けますか？`);
       if (!accept) return;
@@ -696,8 +699,6 @@ callAudio.play().catch(e => {
 
       const answer = await peerConnection.createAnswer();
       await peerConnection.setLocalDescription(answer);
-      callAudio.pause();             
-callAudio.currentTime = 0;    
 
       await supabaseClient.from("calls").insert({
         caller_id: currentUser.id,
@@ -713,23 +714,15 @@ callAudio.currentTime = 0;
     if (call.type === "answer" && call.sdp_answer && peerConnection) {
       const answer = JSON.parse(call.sdp_answer);
       await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-        callAudio.pause();             // ← 追加
-  callAudio.currentTime = 0;  
       showCallPopup("通話中...");
     }
 
-    // ICE Candidate 受信
+    // ICE candidate 受信
     if (call.type === "ice" && call.candidate && peerConnection) {
       const candidate = JSON.parse(call.candidate);
       await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
     }
   }).subscribe();
-
-  peerConnection = new RTCPeerConnection({
-  iceServers: [
-    { urls: "stun:stun.l.google.com:19302" }
-  ]
-});
 
 
 
