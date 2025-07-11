@@ -140,6 +140,24 @@
   #send-btn:hover {
     background-color: #666;
   }
+   #call-btn {
+    background-color: #444;
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+   #logout-btn {
+    background-color: #444;
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+  }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js" defer></script>
 </head>
@@ -163,6 +181,12 @@
     <input id="new-partner" placeholder="ニックネームで追加" />
     <button id="add-partner-btn">追加</button>
   </div>
+  <div id="call-popup" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%);
+ background:white; border:1px solid #ccc; padding:20px; text-align:center; z-index:9999;">
+  <div id="call-status">接続中...</div>
+  <div id="call-timer"></div>
+  <button id="end-call-btn" style="margin-top:10px;">通話終了</button>
+</div>
 
   <div id="partner-list" title="トーク相手を変更"></div>
 
@@ -176,7 +200,7 @@
 
   <button id="send-btn">送信</button>
    <input type="file" id="file" />
- 
+ <button id="call-btn">音声通話を開始</button>
 </div>
 
 </div>
@@ -185,6 +209,7 @@
 <div class="side-title">menu</div>
 <div class="side">
 <ul>
+    <audio id="call-audio" src="call.mp3" preload="auto"></audio>
  
 
 </ul>
@@ -536,7 +561,167 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("new-partner").value = "";
     if (messagePolling) clearInterval(messagePolling);
   }
+  let localStream = null;
+  let peerConnection = null;
+  let callChannel = null;
+  const callAudio = document.getElementById("call-audio");
+  const callPopup = document.getElementById("call-popup");
+  const callStatus = document.getElementById("call-status");
+  const callTimerEl = document.getElementById("call-timer");
+  let callTimerInterval = null;
+
+  document.getElementById("call-btn").onclick = startCall;
+  document.getElementById("end-call-btn").onclick = endCall;
+
+  // 発信処理
+async function startCall() {
+  if (!currentPartner) return alert("通話相手を選択してください");
+
+  const { data: partnerUser } = await supabaseClient
+    .from("users")
+    .select("*")
+    .eq("nickname", currentPartner)
+    .single();
+  if (!partnerUser) return alert("相手が見つかりません");
+
+  await prepareCallConnection(true);
+
+  // offer を作成し、calls に登録
+  const offer = await peerConnection.createOffer();
+  await peerConnection.setLocalDescription(offer);
+
+  // 重複通話を避けるため削除（任意）
+  await supabaseClient.from("calls")
+    .delete()
+    .eq("caller_id", currentUser.id)
+    .eq("callee_id", partnerUser.id);
+
+  await supabaseClient.from("calls").insert({
+    caller_id: currentUser.id,
+    callee_id: partnerUser.id,
+    type: "offer",
+    sdp_offer: JSON.stringify(offer)
+  });
+
+  showCallPopup("発信中...");
+  callAudio.play();
+}
+
+async function prepareCallConnection(isCaller) {
+  peerConnection = new RTCPeerConnection();
+
+  localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+  peerConnection.ontrack = event => {
+    const remoteAudio = new Audio();
+    remoteAudio.srcObject = event.streams[0];
+    remoteAudio.play();
+  };
+
+  peerConnection.onicecandidate = async (event) => {
+    if (event.candidate) {
+      await supabaseClient.from("calls").insert({
+        caller_id: currentUser.id,
+        callee_id: currentPartner.id,
+        type: "ice",
+        candidate: JSON.stringify(event.candidate)
+      });
+    }
+  };
+}
+
+function showCallPopup(status) {
+  callStatus.textContent = status;
+  callTimerEl.textContent = "";
+  callPopup.style.display = "block";
+  let seconds = 0;
+  callTimerInterval = setInterval(() => {
+    seconds++;
+    const min = Math.floor(seconds / 60);
+    const sec = seconds % 60;
+    callTimerEl.textContent = `通話時間: ${min}:${sec.toString().padStart(2, "0")}`;
+  }, 1000);
+}
+
+function endCall() {
+  if (peerConnection) peerConnection.close();
+  if (localStream) localStream.getTracks().forEach(track => track.stop());
+  peerConnection = null;
+  localStream = null;
+
+  callAudio.pause();
+  callAudio.currentTime = 0;
+
+  callPopup.style.display = "none";
+  clearInterval(callTimerInterval);
+}
+supabaseClient.channel("calls")
+  .on("postgres_changes", {
+    event: "INSERT",
+    schema: "public",
+    table: "calls"
+  }, async payload => {
+    const call = payload.new;
+
+    if (call.callee_id !== currentUser.id) return; // 自分宛のみ処理
+
+    // 着信：オファー受信
+    if (call.type === "offer" && call.sdp_offer) {
+      const callerUser = await supabaseClient
+        .from("users")
+        .select("*")
+        .eq("id", call.caller_id)
+        .single();
+
+      const accept = confirm(`「${callerUser.data.nickname}」から通話着信！受けますか？`);
+      if (!accept) return;
+
+      currentPartner = callerUser.data.nickname;
+      await prepareCallConnection(false);
+
+      const offer = JSON.parse(call.sdp_offer);
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+      callAudio.pause();             
+callAudio.currentTime = 0;    
+
+      await supabaseClient.from("calls").insert({
+        caller_id: currentUser.id,
+        callee_id: call.caller_id,
+        type: "answer",
+        sdp_answer: JSON.stringify(answer)
+      });
+
+      showCallPopup("通話中...");
+    }
+
+    // アンサー受信
+    if (call.type === "answer" && call.sdp_answer && peerConnection) {
+      const answer = JSON.parse(call.sdp_answer);
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+        callAudio.pause();             // ← 追加
+  callAudio.currentTime = 0;  
+      showCallPopup("通話中...");
+    }
+
+    // ICE Candidate 受信
+    if (call.type === "ice" && call.candidate && peerConnection) {
+      const candidate = JSON.parse(call.candidate);
+      await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+    }
+  }).subscribe();
+
+
+
+  
 });
+
+
+
 </script>
+
 </body>
 </html>
