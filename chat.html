@@ -210,6 +210,7 @@
 <div class="side">
 <ul>
     <audio id="call-audio" src="call.mp3" preload="auto"></audio>
+
  
 
 </ul>
@@ -613,11 +614,14 @@ async function prepareCallConnection(isCaller) {
   localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
-  peerConnection.ontrack = event => {
-    const remoteAudio = new Audio();
-    remoteAudio.srcObject = event.streams[0];
-    remoteAudio.play();
-  };
+peerConnection.ontrack = event => {
+  const remoteAudio = document.createElement("audio");
+  remoteAudio.srcObject = event.streams[0];
+  remoteAudio.autoplay = true;
+  remoteAudio.controls = true; // デバッグ時に可視化
+  document.body.appendChild(remoteAudio); // DOMに追加しておく
+};
+
 
   peerConnection.onicecandidate = async (event) => {
     if (event.candidate) {
@@ -673,6 +677,13 @@ supabaseClient.channel("calls")
         .select("*")
         .eq("id", call.caller_id)
         .single();
+
+        callAudio.pause();  // 念のため停止
+callAudio.currentTime = 0;
+callAudio.play().catch(e => {
+  console.warn("音声再生失敗:", e);
+});
+
 
       const accept = confirm(`「${callerUser.data.nickname}」から通話着信！受けますか？`);
       if (!accept) return;
