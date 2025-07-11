@@ -626,6 +626,8 @@ async function prepareCallConnection(isCaller) {
     remoteAudio.play().catch(e => {
       console.warn("音声再生失敗:", e);
     });
+      callAudio.pause();
+  callAudio.currentTime = 0;
   };
 
   peerConnection.onicecandidate = async (event) => {
