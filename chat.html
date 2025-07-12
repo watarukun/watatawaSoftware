@@ -375,6 +375,8 @@ async function sendMessage() {
   async function loadMessages() {
   if (!currentPartner) return;
 
+  
+
   const { data: toUser } = await supabaseClient
     .from("users")
     .select("*")
@@ -396,7 +398,9 @@ async function sendMessage() {
     (msg.sender_id === toUser.id && msg.receiver_id === currentUser.id)
   );
 
-  const box = document.getElementById("messages");
+    const box = document.getElementById("messages");
+  box.innerHTML = ""; // 古いメッセージを削除
+  displayedMessageIds.clear(); // 表示済みIDもリセット
 
   let unreadCount = 0;
 
