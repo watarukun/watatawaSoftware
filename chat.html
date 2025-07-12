@@ -372,8 +372,10 @@ async function sendMessage() {
 }
 
 
- async function loadMessages() {
+  async function loadMessages() {
   if (!currentPartner) return;
+
+  
 
   const { data: toUser } = await supabaseClient
     .from("users")
@@ -396,14 +398,15 @@ async function sendMessage() {
     (msg.sender_id === toUser.id && msg.receiver_id === currentUser.id)
   );
 
-  const box = document.getElementById("messages");
+    const box = document.getElementById("messages");
+  box.innerHTML = ""; // 古いメッセージを削除
+  displayedMessageIds.clear(); // 表示済みIDもリセット
 
   let unreadCount = 0;
 
   for (const msg of filtered) {
-    // すでに表示されていればスキップ（←この判定に変更）
-    const exists = document.querySelector(`[data-message-id="${msg.id}"]`);
-    if (exists) continue;
+    if (displayedMessageIds.has(msg.id)) continue; // ← 再描画防止
+    displayedMessageIds.add(msg.id);
 
     const div = document.createElement("div");
     div.dataset.messageId = msg.id;
@@ -456,7 +459,6 @@ async function sendMessage() {
 
   unreadBadgeEl.textContent = unreadCount > 0 ? `未読メッセージ: ${unreadCount}` : "";
 }
-
   // パートナー一覧をDBから取得
   async function loadPartnersFromDB() {
     if (!currentUser) return;
@@ -682,8 +684,6 @@ async function prepareCallConnection(isCaller) {
     }
   };
 }
-
-
 
 function showCallPopup(status) {
   callStatus.textContent = status;
