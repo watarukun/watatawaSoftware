@@ -173,12 +173,13 @@
   <input id="nickname" placeholder="ニックネーム" />
   <input id="password" type="password" placeholder="パスワード" />
   <button id="signup-btn">新規登録</button>
-  <button id="login-btn">ログイン</button>
+  <button id="login-btn">サインイン</button>
 </div>
 
 <div id="chat">
-  <p>あなたのニックネーム: <span id="my-nickname"></span></p> <button id="logout-btn">ログアウト</button>
-
+  <p>サインイン中: <span id="my-nickname"></span></p> 
+    <button id="logout-btn">サインアウト</button>
+    <hr>
   <div id="partner-add">
     <input id="new-partner" placeholder="ニックネームで追加" />
     <button id="add-partner-btn">追加</button>
@@ -200,12 +201,13 @@
  
   <input id="msg" placeholder="メッセージ" />
 
-  <button id="send-btn">送信</button>
-<label>ファイルを選択（画像 or 動画）</label>
-<input type="file" id="file" accept="image/*,video/*">
+  <button id="send-btn">send</button>
+<input type="file" id="file" accept="image/*,video/*"> <button id="call-btn">↗音声通話を開始</button>
+
+<hr>
 
 
- <button id="call-btn">音声通話を開始</button>
+
 </div>
 
 </div>
@@ -438,8 +440,8 @@ async function sendMessage() {
     if (msg.sender_id === currentUser.id) {
       const btn = document.createElement("button");
       btn.className = "delete-btn";
-      btn.textContent = "✖";
-      btn.title = "メッセージを削除";
+      btn.textContent = "送信取り消し";
+      btn.title = "メッセージを削除しますか？";
       btn.onclick = () => deleteMessage(msg.id);
       div.appendChild(btn);
     }
