@@ -201,7 +201,10 @@
   <input id="msg" placeholder="メッセージ" />
 
   <button id="send-btn">送信</button>
-   <input type="file" id="file" />
+<label>ファイルを選択（画像 or 動画）</label>
+<input type="file" id="file" accept="image/*,video/*">
+
+
  <button id="call-btn">音声通話を開始</button>
 </div>
 
@@ -221,6 +224,8 @@
 <footer>all rights reserved ©watatawa Software 2021~2025</footer>
 
 <script defer>
+    const displayedMessageIds = new Set();  // ← すでに表示されたメッセージIDを記録
+
 document.addEventListener("DOMContentLoaded", () => {
   const supabaseUrl = "https://mbjvhxpozxylwcemnbcr.supabase.co";
   const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ianZoeHBvenh5bHdjZW1uYmNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIxMzM3MzAsImV4cCI6MjA2NzcwOTczMH0.JddcQ5SoHfR-OWGma__X8iP0OphdnLHOPdYjm3Ca2Qo";
@@ -306,136 +311,148 @@ document.addEventListener("DOMContentLoaded", () => {
     messagePolling = setInterval(loadMessages, 1000);
   }
 
-  async function sendMessage() {
-    if (!currentPartner) return alert("会話する相手を選択してください");
+async function sendMessage() {
+  if (!currentPartner) return alert("会話する相手を選択してください");
 
-    const content = document.getElementById("msg").value.trim();
-    if (!content && !document.getElementById("file").files.length) return alert("メッセージか画像を入力してください");
+  const content = document.getElementById("msg").value.trim();
+  const fileInput = document.getElementById("file");
+  const file = fileInput.files[0];
+  if (!content && !file) return alert("メッセージ、画像、または動画を入力してください");
 
-    const { data: toUser, error: toError } = await supabaseClient
-      .from("users")
-      .select("*")
-      .eq("nickname", currentPartner)
-      .single();
+  const { data: toUser, error: toError } = await supabaseClient
+    .from("users")
+    .select("*")
+    .eq("nickname", currentPartner)
+    .single();
 
-    if (toError || !toUser) return alert("相手のニックネームが見つかりません");
+  if (toError || !toUser) return alert("相手が見つかりません");
 
-    let image_url = null;
-    const fileInput = document.getElementById("file");
-    if (fileInput.files.length > 0) {
-      const file = fileInput.files[0];
-      const path = `${currentUser.id}/${Date.now()}-${file.name}`;
-      const { error: uploadError } = await supabaseClient.storage
-        .from("chat-images")
-        .upload(path, file);
+  let image_url = null;
+  let video_url = null;
 
-      if (uploadError) return alert("画像アップロード失敗: " + uploadError.message);
+  if (file) {
+    const ext = file.name.split(".").pop().toLowerCase();
+    const path = `${currentUser.id}/${Date.now()}-${file.name}`;
 
-      const { data: urlData } = supabaseClient.storage
-        .from("chat-images")
-        .getPublicUrl(path);
+    const bucket = ext === "mp4" ? "chat-videos" : "chat-images";
+    const { error: uploadError } = await supabaseClient.storage
+      .from(bucket)
+      .upload(path, file);
 
+    if (uploadError) return alert("ファイルアップロード失敗: " + uploadError.message);
+
+    const { data: urlData } = supabaseClient.storage.from(bucket).getPublicUrl(path);
+
+    if (ext === "mp4") {
+      video_url = urlData.publicUrl;
+    } else {
       image_url = urlData.publicUrl;
     }
-
-    const { error } = await supabaseClient
-      .from("messages")
-      .insert({
-        sender_id: currentUser.id,
-        receiver_id: toUser.id,
-        content,
-        image_url
-      });
-
-    if (error) return alert("メッセージ送信失敗: " + error.message);
-
-    document.getElementById("msg").value = "";
-    fileInput.value = "";
-
-    await addPartnerToDB(currentPartner);
-    loadMessages();
   }
+
+  const { error } = await supabaseClient
+    .from("messages")
+    .insert({
+      sender_id: currentUser.id,
+      receiver_id: toUser.id,
+      content,
+      image_url,
+      video_url
+    });
+
+  if (error) return alert("送信失敗: " + error.message);
+
+  document.getElementById("msg").value = "";
+  fileInput.value = "";
+
+  await addPartnerToDB(currentPartner);
+  loadMessages();
+}
+
 
   async function loadMessages() {
-    if (!currentPartner) return;
+  if (!currentPartner) return;
 
-    const { data: toUser } = await supabaseClient
-      .from("users")
-      .select("*")
-      .eq("nickname", currentPartner)
-      .single();
+  const { data: toUser } = await supabaseClient
+    .from("users")
+    .select("*")
+    .eq("nickname", currentPartner)
+    .single();
 
-    if (!toUser) return;
+  if (!toUser) return;
 
-    const { data, error } = await supabaseClient
-      .from("messages")
-      .select("*")
-      .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
-      .order("created_at", { ascending: true });
+  const { data, error } = await supabaseClient
+    .from("messages")
+    .select("*")
+    .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+    .order("created_at", { ascending: true });
 
-    if (error) return console.error(error);
+  if (error) return console.error(error);
 
-    const filtered = data.filter(msg =>
-      (msg.sender_id === currentUser.id && msg.receiver_id === toUser.id) ||
-      (msg.sender_id === toUser.id && msg.receiver_id === currentUser.id)
-    );
+  const filtered = data.filter(msg =>
+    (msg.sender_id === currentUser.id && msg.receiver_id === toUser.id) ||
+    (msg.sender_id === toUser.id && msg.receiver_id === currentUser.id)
+  );
 
-    const box = document.getElementById("messages");
-    box.innerHTML = "";
+  const box = document.getElementById("messages");
 
-    let unreadCount = 0;
+  let unreadCount = 0;
 
-    for (const msg of filtered) {
-      const div = document.createElement("div");
+  for (const msg of filtered) {
+    if (displayedMessageIds.has(msg.id)) continue; // ← 再描画防止
+    displayedMessageIds.add(msg.id);
 
-      const senderLabel = msg.sender_id === currentUser.id ? "自分" : "相手";
-      const messageText = insertLineBreaks(msg.content || "", 30);
-      const timestamp = new Date(msg.created_at).toLocaleString();
+    const div = document.createElement("div");
+    div.dataset.messageId = msg.id;
 
-      div.innerHTML = `
-        <span class="message-info">${senderLabel}</span>
-        <span class="message-content">${messageText}</span>
-        <span class="timestamp">${timestamp}</span>
-      `;
+    const senderLabel = msg.sender_id === currentUser.id ? "自分" : "相手";
+    const messageText = insertLineBreaks(msg.content || "", 30);
+    const timestamp = new Date(msg.created_at).toLocaleString();
 
-      if (msg.image_url) {
-        const img = document.createElement("img");
-        img.src = msg.image_url;
-        div.appendChild(img);
-      }
+    div.innerHTML = `
+      <span class="message-info">${senderLabel}</span>
+      <span class="message-content">${messageText}</span>
+      <span class="timestamp">${timestamp}</span>
+    `;
 
-      if (msg.sender_id === currentUser.id) {
-        const btn = document.createElement("button");
-        btn.className = "delete-btn";
-        btn.textContent = "✖";
-        btn.title = "メッセージを削除";
-        btn.onclick = () => deleteMessage(msg.id);
-        div.appendChild(btn);
-      }
-
-      box.appendChild(div);
-
-      // 簡易未読判定
-      if (msg.receiver_id === currentUser.id && !msg.read) {
-        unreadCount++;
-      }
+    if (msg.image_url) {
+      const img = document.createElement("img");
+      img.src = msg.image_url;
+      img.alt = "画像";
+      img.style.maxWidth = "200px";
+      img.style.display = "block";
+      div.appendChild(img);
     }
 
-    unreadBadgeEl.textContent = unreadCount > 0 ? `未読メッセージ: ${unreadCount}` : "";
+    if (msg.video_url) {
+      const video = document.createElement("video");
+      video.src = msg.video_url;
+      video.controls = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.style.maxWidth = "300px";
+      video.style.display = "block";
+      div.appendChild(video);
+    }
+
+    if (msg.sender_id === currentUser.id) {
+      const btn = document.createElement("button");
+      btn.className = "delete-btn";
+      btn.textContent = "✖";
+      btn.title = "メッセージを削除";
+      btn.onclick = () => deleteMessage(msg.id);
+      div.appendChild(btn);
+    }
+
+    box.appendChild(div);
+
+    if (msg.receiver_id === currentUser.id && !msg.read) {
+      unreadCount++;
+    }
   }
 
-  async function deleteMessage(id) {
-    const { error } = await supabaseClient
-      .from("messages")
-      .delete()
-      .eq("id", id)
-      .eq("sender_id", currentUser.id);
-
-    if (error) return alert("削除失敗: " + error.message);
-
-    loadMessages();
-  }
-
+  unreadBadgeEl.textContent = unreadCount > 0 ? `未読メッセージ: ${unreadCount}` : "";
+}
   // パートナー一覧をDBから取得
   async function loadPartnersFromDB() {
     if (!currentUser) return;
