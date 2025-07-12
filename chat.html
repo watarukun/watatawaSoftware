@@ -501,6 +501,26 @@ async function sendMessage() {
     renderPartnerList();
   }
 
+  async function deleteMessage(messageId) {
+  const { error } = await supabaseClient
+    .from("messages")
+    .delete()
+    .eq("id", messageId)
+    .eq("sender_id", currentUser.id);  // 念のため本人確認
+
+  if (error) {
+    alert("削除に失敗しました: " + error.message);
+    return;
+  }
+
+  // DOMから削除
+  const el = document.querySelector(`[data-message-id="${messageId}"]`);
+  if (el) el.remove();
+
+  displayedMessageIds.delete(messageId);  // 再取得時に表示できるようにする（任意）
+}
+
+
   // パートナー一覧描画（削除ボタン付き）
   function renderPartnerList() {
     partnerListEl.innerHTML = "";
