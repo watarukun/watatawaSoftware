@@ -12,7 +12,7 @@ body {
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 header {
-	background: #F5F3F0;
+	background: #fefef6;
 	border-top: 4px solid #777;
 	height: 80px;
 }
@@ -91,12 +91,12 @@ h2 {
 footer {
 	padding: 20px;
 	height: 100px;
-	background-color: #000;
-	color: #fff;
+	background-color: #2b2b2b;
+	color: #63b590;
 	text-align: center;
 }
 blockquote {
-	border: 1px solid #ccc;
+	border: 1px solid #83cfd4;
 	padding: 5px;
 	margin: 10px;
 }
@@ -124,5 +124,28 @@ footer {
 #message-reply {
   min-height: 50px;
 }
+
+a {
+    text-decoration: none;
+}
+
+a {
+    color: #0066CC;
+}
+
+.header_left {
+    float: left;
+    margin: 0px;
+    padding: 0px;
+}
+
+body {
+    font-size: 10pt;
+    font-family: "Arial", "Helvetica", sans-serif;
+    background: #FFF;
+    margin: 0px;
+    padding: 0px;
+}
+
 
 
