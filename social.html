@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>3Dゲーム ログイン＆モデルアップロード＆リアルタイム</title>
+  <style>
+    body { margin: 0; background: #111; color: white; font-family: sans-serif; overflow: hidden; }
+    #login-form { 
+      border: 3px solid green; 
+      padding: 20px; 
+      width: 300px; 
+      margin: 100px auto; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 10px; 
+    }
+    #game-canvas { display: none; width: 100vw; height: 100vh; }
+    #signout-button, #upload-model-button {
+      position: absolute;
+      right: 20px;
+      padding: 10px;
+      border: none;
+      cursor: pointer;
+      color: white;
+      z-index: 10;
+    }
+    #signout-button {
+      top: 20px;
+      background: red;
+      display: none;
+    }
+    #upload-model-button {
+      top: 60px;
+      background: #0055ff;
+      display: none;
+    }
+    #upload-model-input {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div id="login-form">
+  <h2>ログイン</h2>
+  <input type="text" id="nickname" placeholder="ニックネーム" />
+  <input type="password" id="password" placeholder="パスワード" />
+  <button id="signin-button">サインイン</button>
+  <p id="error-message" style="color: red;"></p>
+</div>
+
+<button id="signout-button">サインアウト</button>
+<button id="upload-model-button">3Dモデルアップロード</button>
+<input type="file" id="upload-model-input" accept=".glb,.gltf" />
+
+<canvas id="game-canvas"></canvas>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+  import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/+esm';
+  import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
+
+
+  // --- Supabase ---
+  const supabaseUrl = 'https://mbjvhxpozxylwcemnbcr.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ianZoeHBvenh5bHdjZW1uYmNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIxMzM3MzAsImV4cCI6MjA2NzcwOTczMH0.JddcQ5SoHfR-OWGma__X8iP0OphdnLHOPdYjm3Ca2Qo';
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  let loggedInUser = null;
+  let playerModels = {};  // { userId: THREE.Group }
+
+  // --- THREE.js 基本セットアップ ---
+  const canvas = document.getElementById('game-canvas');
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer({ canvas });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  camera.position.z = 5;
+
+  const light = new THREE.DirectionalLight(0xffffff, 1);
+  light.position.set(5, 10, 7);
+  scene.add(light);
+
+  // 3Dプレイヤー基準モデル（箱）
+  const baseGeometry = new THREE.BoxGeometry(1, 1, 1);
+  const baseMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+
+  // GLTFローダー
+  const loader = new GLTFLoader();
+
+  // --- ユーザー操作関連 ---
+  let playerPosition = { x: 0, y: 0, z: 0 };
+  const speed = 0.1;
+  const keys = {};
+
+  window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+  window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+
+  // --- DOM要素 ---
+  const loginForm = document.getElementById('login-form');
+  const signoutButton = document.getElementById('signout-button');
+  const uploadModelButton = document.getElementById('upload-model-button');
+  const uploadModelInput = document.getElementById('upload-model-input');
+  const errorMessage = document.getElementById('error-message');
+
+  // --- イベント: サインイン ---
+  document.getElementById('signin-button').addEventListener('click', async () => {
+    const nickname = document.getElementById('nickname').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!nickname || !password) {
+      errorMessage.innerText = 'ニックネームとパスワードを入力してください';
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('nickname', nickname)
+      .eq('password', password)
+      .single();
+
+    if (error || !data) {
+      errorMessage.innerText = '認証失敗';
+      return;
+    }
+
+    loggedInUser = data;
+    errorMessage.innerText = '';
+    loginForm.style.display = 'none';
+    signoutButton.style.display = 'block';
+    uploadModelButton.style.display = 'block';
+    canvas.style.display = 'block';
+
+    // 自分の初期モデル追加
+    addOrUpdatePlayerModel(loggedInUser.id, null, playerPosition, true);
+
+    // Supabase Realtimeで他ユーザーのログイン状況監視開始
+    startRealtimeUserSync();
+
+    animate();
+  });
+
+  // --- イベント: サインアウト ---
+  signoutButton.addEventListener('click', () => {
+    location.reload();
+  });
+
+  // --- イベント: アップロードボタン ---
+  uploadModelButton.addEventListener('click', () => {
+    uploadModelInput.click();
+  });
+
+  // --- 3Dモデルアップロードファイル選択時 ---
+  uploadModelInput.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const arrayBuffer = e.target.result;
+      loader.parse(arrayBuffer, '', (gltf) => {
+        // 自分のモデル差し替え
+        addOrUpdatePlayerModel(loggedInUser.id, gltf.scene, playerPosition, true);
+      }, (error) => {
+        console.error('モデルの読み込みに失敗:', error);
+        alert('3Dモデルの読み込みに失敗しました');
+      });
+    };
+    reader.readAsArrayBuffer(file);
+  });
+
+  // --- プレイヤーモデルを追加or更新 ---
+  // 自分のモデルか他ユーザーかはisLocalUserで判別
+  function addOrUpdatePlayerModel(userId, modelScene, position, isLocalUser = false) {
+    // 既にモデルあれば削除
+    if (playerModels[userId]) {
+      scene.remove(playerModels[userId]);
+    }
+
+    let group = new THREE.Group();
+    if (modelScene) {
+      group.add(modelScene);
+    } else {
+      // デフォルト箱モデル
+      const mesh = new THREE.Mesh(baseGeometry, baseMaterial.clone());
+      if (!isLocalUser) mesh.material.color.setHex(0x0000ff); // 他ユーザーは青
+      group.add(mesh);
+    }
+
+    group.position.set(position.x, position.y, position.z);
+    scene.add(group);
+    playerModels[userId] = group;
+  }
+
+  // --- Supabase Realtimeでログイン中ユーザーを取得＆監視 ---
+  function startRealtimeUserSync() {
+    // ログインユーザー以外のユーザー一覧取得
+    supabase
+      .from('users')
+      .select('*')
+      .neq('id', loggedInUser.id)
+      .then(({ data, error }) => {
+        if (error) {
+          console.error(error);
+          return;
+        }
+        // 最初のユーザーのモデル表示（デフォルト箱）
+        data.forEach(u => {
+          addOrUpdatePlayerModel(u.id, null, { x: Math.random()*4-2, y: 0, z: Math.random()*4-2 });
+        });
+      });
+
+    // TODO: ここにSupabaseのrealtime subscribeコードを入れて、
+    // ユーザーのログイン/ログアウトや位置変更のイベントを受けて
+    // playerModelsを更新する処理を後で追加します。
+  }
+
+  // --- 移動処理 ---
+  function updateLocalPlayerPosition() {
+    if (keys['w']) playerPosition.z -= speed;
+    if (keys['s']) playerPosition.z += speed;
+    if (keys['a']) playerPosition.x -= speed;
+    if (keys['d']) playerPosition.x += speed;
+
+    const playerModel = playerModels[loggedInUser.id];
+    if (playerModel) {
+      playerModel.position.set(playerPosition.x, playerPosition.y, playerPosition.z);
+    }
+
+    // TODO: Supabaseに位置情報送信して同期するコードを後で追加
+  }
+
+  // --- アニメーションループ ---
+  function animate() {
+    requestAnimationFrame(animate);
+    updateLocalPlayerPosition();
+    renderer.render(scene, camera);
+  }
+
+  // --- リサイズ対応 ---
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+</script>
+</body>
+</html>
