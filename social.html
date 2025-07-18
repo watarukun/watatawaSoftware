@@ -63,14 +63,25 @@
 
   <!-- 地面とオブジェクト -->
   <a-plane rotation="-90 0 0" width="50" height="50" color="#7BC8A4"></a-plane>
-  <a-box position="3 0.5 -5" color="#FF0000"></a-box>
+
+    <a-entity gltf-model="#houseModel" position="0 0 15" scale="5 5 5"></a-entity>
+
+    <a-entity gltf-model="#stopModel" position="22 0 -15" scale="0.2 0.2 0.2"></a-entity>
+
+
+ <a-entity id="tree" position="5 0 -15" scale="22 22 22" rotation="0 45 0" gltf-model="#treeModel"></a-entity>
 
   <!-- プレイヤー -->
-  <a-entity id="player" position="0 0 0">
-    <a-entity id="user-model" position="0 1 0" movable-model></a-entity>
-    <a-entity id="camera" camera position="0 3 5" look-controls="pointerLockEnabled: true"></a-entity>
+  <a-entity id="player" position="0 -1 0">
+    <a-entity id="user-model" position="0 1 6" movable-model></a-entity>
+    <a-entity id="camera" camera position="0 4.2 5" look-controls="pointerLockEnabled: true"></a-entity>
   </a-entity>
 </a-scene>
+  <a-assets>
+    <a-asset-item id="treeModel" src="tree.glb"></a-asset-item>
+        <a-asset-item id="houseModel" src="house.glb"></a-asset-item>
+        <a-asset-item id="stopModel" src="stop.glb"></a-asset-item>
+  </a-assets>
 
 <script>
 const supabase = window.supabase.createClient(
@@ -241,6 +252,8 @@ AFRAME.registerComponent('movable-model', {
       direction.y = 0; // 水平方向のみにする
       direction.normalize();
 
+      
+
       // 右方向ベクトルも取得
       const right = new THREE.Vector3();
       right.crossVectors(new THREE.Vector3(0, 1, 0), direction).normalize();
@@ -252,6 +265,8 @@ AFRAME.registerComponent('movable-model', {
       movement.normalize();
 
       pos.addScaledVector(movement, this.data.speed * delta / 1000);
+
+      
     }
   }
 });
