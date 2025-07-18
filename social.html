@@ -216,6 +216,8 @@ AFRAME.registerComponent('movable-model', {
   schema: { speed: { type: 'number', default: 4 } },
   init() {
     this.keys = {};
+    this.camera = document.querySelector('#camera').object3D;
+
     window.addEventListener('keydown', e => { this.keys[e.code] = true; });
     window.addEventListener('keyup', e => { this.keys[e.code] = false; });
   },
@@ -225,42 +227,34 @@ AFRAME.registerComponent('movable-model', {
     const pos = el.object3D.position;
     const move = new THREE.Vector3();
 
-    if (this.keys['KeyW']) move.z -= 1;
-    if (this.keys['KeyS']) move.z += 1;
+    if (this.keys['KeyS']) move.z -= 1;
+    if (this.keys['KeyW']) move.z += 1;
     if (this.keys['KeyA']) move.x -= 1;
     if (this.keys['KeyD']) move.x += 1;
 
     if (move.length() > 0) {
       move.normalize();
-      pos.x += move.x * this.data.speed * delta / 1000;
-      pos.z += move.z * this.data.speed * delta / 1000;
+
+      // カメラの向きから前方向を取得
+      const direction = new THREE.Vector3();
+      this.camera.getWorldDirection(direction);
+      direction.y = 0; // 水平方向のみにする
+      direction.normalize();
+
+      // 右方向ベクトルも取得
+      const right = new THREE.Vector3();
+      right.crossVectors(new THREE.Vector3(0, 1, 0), direction).normalize();
+
+      // 最終移動量計算
+      const movement = new THREE.Vector3();
+      movement.addScaledVector(direction, -move.z);
+      movement.addScaledVector(right, move.x);
+      movement.normalize();
+
+      pos.addScaledVector(movement, this.data.speed * delta / 1000);
     }
   }
 });
-
-// 位置同期ループ（1秒ごと）
-function startPositionSync() {
-  setInterval(() => {
-    if (!userId) return;
-    const pos = playerEntity.object3D.position;
-    updatePlayerState({ x: pos.x, y: pos.y, z: pos.z });
-  }, 1000);
-}
-
-// 位置アップデート関数
-async function updatePlayerState(position) {
-  if (!userId) return;
-  // console.log('Sending position:', position);
-  const { data, error } = await supabase.from('positions').upsert({
-    user_id: userId,
-    x: position.x,
-    y: position.y,
-    z: position.z,
-    updated_at: new Date().toISOString()
-  }, { onConflict: 'user_id' });
-  if (error) console.error('updatePlayerState error:', error);
-}
-
 
 </script>
 
