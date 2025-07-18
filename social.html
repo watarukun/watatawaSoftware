@@ -1,145 +1,269 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>ソーシャル</title>
+  <link rel="icon" href="icon.png" type="image/x-icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="ページの説明">
 <meta name="keywords" content="ページのキーワードA,B,C">
 <link rel="stylesheet" href="index.css">
-  <link rel="icon" href="icon.png" type="image/x-icon">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <style>
-    body { margin: 0; background: #ffffff; color: rgb(38, 38, 38); font-family: sans-serif; }
+    body { margin: 0; background: #fff; font-family: sans-serif; }
     #login-form {
-      border: 3px solid rgb(71, 155, 71);
-      padding: 20px;
-      width: 300px;
-      margin: 100px auto;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      border: 3px solid rgb(72, 158, 72); padding: 20px; width: 300px;
+      margin: 100px auto; display: flex; flex-direction: column; gap: 10px;
     }
-    #signout-button {
-      display: none;
-      position: absolute;
-      top: 20px; right: 20px;
-      padding: 10px;
-      background: rgb(94, 197, 130);
-      color: white;
-      border: none;
-      cursor: pointer;
-      z-index: 100;
+    #signout-button, #upload-container {
+      display: none; position: absolute; right: 20px;
+      padding: 10px; background: #222; color: white; border: none; cursor: pointer; z-index: 100;
     }
-    #a-scene {
-      display: none;
-      width: 100vw;
-      height: 100vh;
-    }
-    #upload-container {
-      display: none;
-      position: absolute;
-      top: 70px;
-      right: 20px;
-      background: #222;
-      padding: 10px;
-      border-radius: 5px;
-      z-index: 110;
-    }
+    #signout-button { top: 20px; }
+    #upload-container { top: 70px; }
     #error-message { color: red; }
+ 
+    #a-scene {
+    visibility: hidden;
+    opacity: 0;
+    width: 100vw;
+    height: 100vh;
+    transition: opacity 0.5s ease;
+  }
   </style>
 </head>
 <body>
     <div id="outer">
 <header><div id="header-inner"><h1>watatawa Software</h1><a href="index.html">トップページ</a> ｜<a href="market.html">マーケット【ガフ市】</a> ｜ <a href="download.html">ダウンロード</a>  ｜ <a href="post.html">掲示板</a> ｜  <a href="guff.html">ガフ札情報</a>  ｜<a href="guffimage.html">ガフの写真集</a> ｜ <a href="chat.html">チャット</a>｜ <a href="social.html">ソーシャル</a>
-
+</header>
+</div>
+    
 
 <div id="login-form">
+
   <h2>ソーシャルへサインイン</h2>
   <p>チャットで作成したアカウントでサインインしてください</p>
-  <input type="text" id="nickname" placeholder="ニックネーム" />
-  <input type="password" id="password" placeholder="パスワード" />
+  <input type="text" id="nickname" placeholder="ニックネーム">
+  <input type="password" id="password" placeholder="パスワード">
   <button id="signin-button">サインイン</button>
   <p id="error-message"></p>
 </div>
 
 <button id="signout-button">サインアウト</button>
-
 <div id="upload-container">
-  <label for="upload-model-input" style="cursor:pointer; color:#eee;">
-    3Dモデルアップロード（glTF/GLB）
-  </label>
-  <input type="file" id="upload-model-input" accept=".glb,.gltf" style="display:none" />
+  <label for="upload-model-input" style="cursor:pointer;">3Dモデルアップロード</label>
+  <input type="file" id="upload-model-input" accept=".glb,.gltf" style="display:none;">
 </div>
 
 <a-scene id="a-scene" embedded>
   <a-sky color="#222"></a-sky>
-  <a-light type="directional" color="#fff" intensity="1" position="1 3 2"></a-light>
-  <!-- 3Dモデル表示用 -->
-  <a-entity id="user-model" position="0 1 -3"></a-entity>
-  <a-entity camera position="0 1.6 0" wasd-controls look-controls></a-entity>
+  <a-light type="directional" position="1 3 2" intensity="1"></a-light>
+
+  <!-- 地面とオブジェクト -->
+  <a-plane rotation="-90 0 0" width="50" height="50" color="#7BC8A4"></a-plane>
+  <a-box position="3 0.5 -5" color="#FF0000"></a-box>
+
+  <!-- プレイヤー -->
+  <a-entity id="player" position="0 0 0">
+    <a-entity id="user-model" position="0 1 0" movable-model></a-entity>
+    <a-entity id="camera" camera position="0 3 5" look-controls="pointerLockEnabled: true"></a-entity>
+  </a-entity>
 </a-scene>
 
 <script>
-  const supabase = window.supabase.createClient(
-    'https://mbjvhxpozxylwcemnbcr.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ianZoeHBvenh5bHdjZW1uYmNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIxMzM3MzAsImV4cCI6MjA2NzcwOTczMH0.JddcQ5SoHfR-OWGma__X8iP0OphdnLHOPdYjm3Ca2Qo'
-  );
+const supabase = window.supabase.createClient(
+  'https://mbjvhxpozxylwcemnbcr.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ianZoeHBvenh5bHdjZW1uYmNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIxMzM3MzAsImV4cCI6MjA2NzcwOTczMH0.JddcQ5SoHfR-OWGma__X8iP0OphdnLHOPdYjm3Ca2Qo'
+);
 
-  const loginForm = document.getElementById('login-form');
-  const signoutButton = document.getElementById('signout-button');
-  const aScene = document.getElementById('a-scene');
-  const uploadContainer = document.getElementById('upload-container');
-  const errorMessage = document.getElementById('error-message');
-  const userModel = document.getElementById('user-model');
+let userId = null;
+let modelUrl = null; // 今回は自分のモデル用。相手は円筒表示なので不要
 
-  document.getElementById('signin-button').addEventListener('click', async () => {
-    const nickname = document.getElementById('nickname').value.trim();
-    const password = document.getElementById('password').value;
+const loginForm = document.getElementById('login-form');
+const signoutButton = document.getElementById('signout-button');
+const uploadContainer = document.getElementById('upload-container');
+const aScene = document.getElementById('a-scene');
+const errorMessage = document.getElementById('error-message');
+const userModel = document.getElementById('user-model');
+const playerEntity = document.getElementById('player');
 
-    errorMessage.innerText = '';
-    if (!nickname || !password) {
-      errorMessage.innerText = 'ニックネームとパスワードを入力してください';
-      return;
+const otherPlayers = {}; // 他プレイヤーID → a-entity管理
+
+
+
+const header = document.querySelector('#outer > header');
+
+document.getElementById('signin-button').onclick = async () => {
+  const nickname = document.getElementById('nickname').value.trim();
+  const password = document.getElementById('password').value.trim();
+  if (!nickname || !password) {
+    errorMessage.innerText = 'ニックネームとパスワードを入力';
+    return;
+  }
+  const { data, error } = await supabase.from('users').select('*').eq('nickname', nickname).eq('password', password).single();
+  if (error || !data) {
+    errorMessage.innerText = '認証失敗';
+    return;
+  }
+
+  // 認証成功したのでヘッダーを隠す
+const header = document.querySelector('#outer > header');
+header.style.display = 'none';  // これでheaderだけ隠すはず
+
+// 必要なら、headerが複数要素あるか確認し、具体的な要素を指定する
+
+aScene.style.visibility = 'visible';
+aScene.style.opacity = '1';
+
+
+  userId = data.id;
+  loginForm.style.display = 'none';
+  signoutButton.style.display = 'block';
+  uploadContainer.style.display = 'block';
+  aScene.style.display = 'block';
+
+  await updatePlayerState({ x: 0, y: 0, z: 0 });
+
+  subscribePlayerStates(onOtherPlayerUpdate);
+  startPositionSync();
+};
+
+    aScene.addEventListener('click', () => {
+      aScene.requestPointerLock();
+    }, { once: true });
+
+signoutButton.onclick = () => location.reload();  // ここは1回だけでOK
+
+// 位置同期ループは関数1つにまとめる
+function startPositionSync() {
+  setInterval(() => {
+    if (!userId) return;
+    const pos = playerEntity.object3D.position;
+    console.log('位置同期ループ:', pos.x.toFixed(2), pos.y.toFixed(2), pos.z.toFixed(2));
+    updatePlayerState({ x: pos.x, y: pos.y, z: pos.z });
+  }, 1000);
+}
+
+
+signoutButton.onclick = () => location.reload();
+
+document.getElementById('upload-model-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (file) userModel.setAttribute('gltf-model', URL.createObjectURL(file));
+});
+
+// 位置アップデート関数（positionsテーブル用）
+async function updatePlayerState(position) {
+  if (!userId) return;
+  const { error } = await supabase.from('positions').upsert({
+    user_id: userId,
+    x: position.x,
+    y: position.y,
+    z: position.z,
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'user_id' });
+  if (error) console.error('updatePlayerState error:', error);
+}
+
+// 他プレイヤーの位置を受信した時の処理
+function onOtherPlayerUpdate(player) {
+  if (!userId || player.user_id === userId) return;
+  let ent = otherPlayers[player.user_id];
+  if (!ent) {
+    ent = document.createElement('a-cylinder');
+    ent.setAttribute('radius', 0.5);
+    ent.setAttribute('height', 1.5);
+    ent.setAttribute('color', '#0077FF');
+    aScene.appendChild(ent);
+    otherPlayers[player.user_id] = ent;
+  }
+  ent.setAttribute('position', `${player.x} ${player.y} ${player.z}`);
+}
+
+// リアルタイム購読設定（positionsテーブル）
+function subscribePlayerStates(onChange) {
+  supabase.channel('positions_channel')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'positions' }, payload => {
+      onChange(payload.new);
+    })
+    .subscribe();
+}
+function startPositionSync() {
+  setInterval(() => {
+    if (!userId) return;
+    const pos = playerEntity.object3D.position;
+    console.log('位置同期ループ:', pos.x.toFixed(2), pos.y.toFixed(2), pos.z.toFixed(2));
+    updatePlayerState({ x: pos.x, y: pos.y, z: pos.z });
+  }, 1000);
+}
+
+
+// プレイヤー移動情報の定期送信 (1秒ごと)
+function startPositionSync() {
+  setInterval(() => {
+    if (!userId) return;
+    const pos = playerEntity.object3D.position;
+    updatePlayerState({ x: pos.x, y: pos.y, z: pos.z }, modelUrl);
+  }, 1000);
+}
+
+// 既存のmovable-modelコンポーネントはそのまま使えます
+
+// 移動コンポーネント（WASDで移動）
+AFRAME.registerComponent('movable-model', {
+  schema: { speed: { type: 'number', default: 4 } },
+  init() {
+    this.keys = {};
+    window.addEventListener('keydown', e => { this.keys[e.code] = true; });
+    window.addEventListener('keyup', e => { this.keys[e.code] = false; });
+  },
+  tick(time, delta) {
+    const el = this.el.parentEl; // player entity
+    if (!el) return;
+    const pos = el.object3D.position;
+    const move = new THREE.Vector3();
+
+    if (this.keys['KeyW']) move.z -= 1;
+    if (this.keys['KeyS']) move.z += 1;
+    if (this.keys['KeyA']) move.x -= 1;
+    if (this.keys['KeyD']) move.x += 1;
+
+    if (move.length() > 0) {
+      move.normalize();
+      pos.x += move.x * this.data.speed * delta / 1000;
+      pos.z += move.z * this.data.speed * delta / 1000;
     }
+  }
+});
 
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('nickname', nickname)
-      .eq('password', password)
-      .single();
+// 位置同期ループ（1秒ごと）
+function startPositionSync() {
+  setInterval(() => {
+    if (!userId) return;
+    const pos = playerEntity.object3D.position;
+    updatePlayerState({ x: pos.x, y: pos.y, z: pos.z });
+  }, 1000);
+}
 
-    if (error || !data) {
-      errorMessage.innerText = '認証失敗';
-      return;
-    }
+// 位置アップデート関数
+async function updatePlayerState(position) {
+  if (!userId) return;
+  // console.log('Sending position:', position);
+  const { data, error } = await supabase.from('positions').upsert({
+    user_id: userId,
+    x: position.x,
+    y: position.y,
+    z: position.z,
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'user_id' });
+  if (error) console.error('updatePlayerState error:', error);
+}
 
-    loginForm.style.display = 'none';
-    signoutButton.style.display = 'block';
-    aScene.style.display = 'block';
-    uploadContainer.style.display = 'block';
-  });
 
-  signoutButton.addEventListener('click', () => {
-    location.reload();
-  });
-
-  // 3Dモデルアップロード処理
-  document.getElementById('upload-model-input').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const url = URL.createObjectURL(file);
-
-    // 直接 user-model の gltf-model に Blob URLをセット
-    userModel.setAttribute('gltf-model', url);
-
-    // Blob URLは使い終わったら開放したほうがいいが、
-    // 表示継続のため今回は解放しないでおきます
-  });
 </script>
+
 
 </body>
 </html>
