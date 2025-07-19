@@ -1,85 +1,97 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>ソーシャル</title>
-  <link rel="icon" href="icon.png" type="image/x-icon">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="icon.png" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="ページの説明">
-<meta name="keywords" content="ページのキーワードA,B,C">
-<link rel="stylesheet" href="index.css">
+  <link rel="stylesheet" href="index.css">
   <style>
     body { margin: 0; background: #fff; font-family: sans-serif; }
     #login-form {
-      border: 3px solid rgb(72, 158, 72); padding: 20px; width: 300px;
-      margin: 100px auto; display: flex; flex-direction: column; gap: 10px;
+      border: 3px solid rgb(72, 158, 72);
+      padding: 20px;
+      width: 300px;
+      margin: 100px auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
     #signout-button, #upload-container {
-      display: none; position: absolute; right: 20px;
-      padding: 10px; background: #222; color: white; border: none; cursor: pointer; z-index: 100;
+      display: none;
+      position: absolute;
+      right: 20px;
+      padding: 10px;
+      background: #222;
+      color: white;
+      border: none;
+      cursor: pointer;
+      z-index: 100;
     }
     #signout-button { top: 20px; }
     #upload-container { top: 70px; }
     #error-message { color: red; }
- 
     #a-scene {
-    visibility: hidden;
-    opacity: 0;
-    width: 100vw;
-    height: 100vh;
-    transition: opacity 0.5s ease;
-  }
+      visibility: hidden;
+      opacity: 0;
+      width: 100vw;
+      height: 100vh;
+      transition: opacity 0.5s ease;
+    }
   </style>
 </head>
 <body>
-    <div id="outer">
-<header><div id="header-inner"><h1>watatawa Software</h1><a href="index.html">トップページ</a> ｜<a href="market.html">マーケット【ガフ市】</a> ｜ <a href="download.html">ダウンロード</a>  ｜ <a href="post.html">掲示板</a> ｜  <a href="guff.html">ガフ札情報</a>  ｜<a href="guffimage.html">ガフの写真集</a> ｜ <a href="chat.html">チャット</a>｜ <a href="social.html">ソーシャル</a>
-</header>
-</div>
-    
+  <div id="outer">
+    <header>
+      <div id="header-inner">
+        <h1>watatawa Software</h1>
+        <a href="index.html">トップページ</a> ｜<a href="market.html">マーケット【ガフ市】</a> ｜ 
+        <a href="download.html">ダウンロード</a> ｜ <a href="post.html">掲示板</a> ｜  
+        <a href="guff.html">ガフ札情報</a> ｜<a href="guffimage.html">ガフの写真集</a> ｜ 
+        <a href="chat.html">チャット</a>｜ <a href="social.html">ソーシャル</a>
+      </div>
+    </header>
+  </div>
 
-<div id="login-form">
+  <div id="login-form">
+    <h2>ソーシャルへサインイン</h2>
+    <p>チャットで作成したアカウントでサインインしてください</p>
+    <input type="text" id="nickname" placeholder="ニックネーム" />
+    <input type="password" id="password" placeholder="パスワード" />
+    <button id="signin-button">サインイン</button>
+    <p id="error-message"></p>
+  </div>
 
-  <h2>ソーシャルへサインイン</h2>
-  <p>チャットで作成したアカウントでサインインしてください</p>
-  <input type="text" id="nickname" placeholder="ニックネーム">
-  <input type="password" id="password" placeholder="パスワード">
-  <button id="signin-button">サインイン</button>
-  <p id="error-message"></p>
-</div>
+  <button id="signout-button">サインアウト</button>
+  <div id="upload-container">
+    <label for="upload-model-input" style="cursor:pointer;">3Dモデルアップロード</label>
+    <input type="file" id="upload-model-input" accept=".glb,.gltf" style="display:none;" />
+  </div>
 
-<button id="signout-button">サインアウト</button>
-<div id="upload-container">
-  <label for="upload-model-input" style="cursor:pointer;">3Dモデルアップロード</label>
-  <input type="file" id="upload-model-input" accept=".glb,.gltf" style="display:none;">
-</div>
+  <a-scene id="a-scene" embedded>
+    <a-assets>
+      <a-asset-item id="treeModel" src="tree.glb"></a-asset-item>
+      <a-asset-item id="houseModel" src="house.glb"></a-asset-item>
+      <a-asset-item id="stopModel" src="stop.glb"></a-asset-item>
+      <a-asset-item id="otherModel" src="other.glb"></a-asset-item>
+    </a-assets>
 
-<a-scene id="a-scene" embedded>
-  <a-assets>
-    <a-asset-item id="treeModel" src="tree.glb"></a-asset-item>
-    <a-asset-item id="houseModel" src="house.glb"></a-asset-item>
-    <a-asset-item id="stopModel" src="stop.glb"></a-asset-item>
-    <a-asset-item id="otherModel" src="other.glb"></a-asset-item>
-  </a-assets>
+    <a-sky color="#222"></a-sky>
+    <a-light type="directional" position="1 3 2" intensity="1"></a-light>
 
-  <a-sky color="#222"></a-sky>
-  <a-light type="directional" position="1 3 2" intensity="1"></a-light>
+    <a-plane rotation="-90 0 0" width="200" height="200" color="#7BC8A4"></a-plane>
 
-  <a-plane rotation="-90 0 0" width="200" height="200" color="#7BC8A4"></a-plane>
+    <a-entity id="house" gltf-model="#houseModel" position="0 0 15" scale="11 11 11"></a-entity>
+    <a-entity id="tree" gltf-model="#treeModel" position="5 0 -15" scale="22 22 22"></a-entity>
+    <a-entity id="stop" gltf-model="#stopModel" position="22 0 -15" scale="0.2 0.2 0.2"></a-entity>
 
-  <a-entity id="house" gltf-model="#houseModel" position="0 0 15" scale="11 11 11"></a-entity>
-  <a-entity id="tree" gltf-model="#treeModel" position="5 0 -15" scale="22 22 22"></a-entity>
-  <a-entity id="stop" gltf-model="#stopModel" position="22 0 -15" scale="0.2 0.2 0.2"></a-entity>
-
-  <a-entity id="player" position="0 -1 0">
-    <a-entity id="user-model" position="0 1 6" movable-model></a-entity>
-    <a-entity id="camera" camera position="0 4.2 0" look-controls="pointerLockEnabled: true"></a-entity>
-  </a-entity>
-</a-scene>
-
+    <a-entity id="player" position="0 -1 0">
+      <a-entity id="user-model" position="0 1 6" movable-model></a-entity>
+      <a-entity id="camera" camera position="0 5.5 0" look-controls="pointerLockEnabled: true"></a-entity>
+    </a-entity>
+  </a-scene>
 
 <script>
 const supabase = window.supabase.createClient(
@@ -97,8 +109,7 @@ const userModel = document.getElementById('user-model');
 const playerEntity = document.getElementById('player');
 const otherPlayers = {}; // 他プレイヤー管理
 
-// ---- movalbe-model コンポーネントは必ずグローバルに1回だけ定義 ----
-// 重複登録防止
+// movalbe-model コンポーネント定義（重複登録防止）
 if (!AFRAME.components['movable-model']) {
   AFRAME.registerComponent('movable-model', {
     schema: { speed: { type: 'number', default: 4 } },
@@ -152,90 +163,6 @@ if (!AFRAME.components['movable-model']) {
   });
 }
 
-// 向きの反映（省略）...
-// 同期ループ間隔は1秒に修正
-// 定期的に送信
-function startPositionSync() {
-  setInterval(() => {
-    if (!userId) return;
-    const pos = playerEntity.object3D.position;
-    const camRot = document.querySelector('#camera').object3D.rotation;
-    updatePlayerState(pos, camRot.y);
-  }, 1000);
-}
-
-// 他プレイヤー表示時
-function onOtherPlayerUpdate(player) {
-  if (!userId || player.user_id === userId) return;
-
-  let ent = otherPlayers[player.user_id];
-  if (!ent) {
-    ent = document.createElement('a-entity');
-    ent.setAttribute('gltf-model', '#otherModel');
-    ent.setAttribute('scale', '2 2 2');
-    aScene.appendChild(ent);
-    otherPlayers[player.user_id] = ent;
-  }
-
-  ent.setAttribute('position', `${player.x} ${player.y} ${player.z}`);
-
-  if (typeof player.rotation_y === 'number') {
-    const degY = THREE.MathUtils.radToDeg(player.rotation_y);
-    ent.setAttribute('rotation', `0 ${degY} 0`);
-  }
-}
-
-
-
-// サインインボタン押下
-document.getElementById('signin-button').onclick = async () => {
-  const nickname = document.getElementById('nickname').value.trim();
-  const password = document.getElementById('password').value.trim();
-  if (!nickname || !password) {
-    errorMessage.innerText = 'ニックネームとパスワードを入力';
-    return;
-  }
-  const { data, error } = await supabase.from('users').select('*').eq('nickname', nickname).eq('password', password).single();
-  if (error || !data) {
-    errorMessage.innerText = '認証失敗';
-    return;
-  }
-
-  // ヘッダー非表示
-  document.querySelector('#outer > header').style.display = 'none';
-
-  // シーン表示
-  aScene.style.visibility = 'visible';
-  aScene.style.opacity = '1';
-  aScene.style.display = 'block';
-
-  userId = data.id;
-  loginForm.style.display = 'none';
-  signoutButton.style.display = 'block';
-  uploadContainer.style.display = 'block';
-
-  // 初期位置登録
-  await updatePlayerState({ x: 0, y: 0, z: 0 }, 0);
-
-  subscribePlayerStates(onOtherPlayerUpdate);
-  startPositionSync();
-};
-
-// ポインターロック（1回だけ）
-aScene.addEventListener('click', () => {
-  aScene.requestPointerLock();
-}, { once: true });
-
-// サインアウトはリロード
-signoutButton.onclick = () => location.reload();
-
-// 3Dモデルアップロード
-document.getElementById('upload-model-input').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (file) userModel.setAttribute('gltf-model', URL.createObjectURL(file));
-});
-
-// 位置と回転をSupabaseへアップサート
 // 位置と回転をSupabaseへアップサート
 async function updatePlayerState(position, rotationY) {
   if (!userId) return;
@@ -259,24 +186,7 @@ async function updatePlayerState(position, rotationY) {
   if (error) console.error('updatePlayerState error:', error);
 }
 
-// 1秒ごとに自分の位置・回転をアップデート（1秒間隔固定）
-function startPositionSync() {
-  setInterval(() => {
-    if (!userId) return;
-    const pos = playerEntity.object3D.position;
-    const rot = playerEntity.object3D.rotation;
-    console.log('送信位置:', pos, '送信回転(rot.y):', rot.y);
-    updatePlayerState(pos, rot.y);
-  }, 1000);
-}
-
-// シーンがロードされたら位置同期を開始
-aScene.addEventListener('loaded', () => {
-  console.log('a-scene loaded, start position sync');
-  startPositionSync();
-});
-
-// 他プレイヤーの位置と回転を反映
+// 他プレイヤーの表示更新
 function onOtherPlayerUpdate(player) {
   if (!userId || player.user_id === userId) return;
 
@@ -293,55 +203,118 @@ function onOtherPlayerUpdate(player) {
 
   if (typeof player.rotation_y === 'number') {
     const degY = THREE.MathUtils.radToDeg(player.rotation_y);
-    ent.setAttribute('rotation', `0 ${degY} 0`);  // 横向きのみ適用
+    ent.setAttribute('rotation', `0 ${degY} 0`);
+  }
+}
+
+// 他プレイヤー削除処理
+function onOtherPlayerRemove(player) {
+  if (!userId) return;
+  const ent = otherPlayers[player.user_id];
+  if (ent) {
+    aScene.removeChild(ent);
+    delete otherPlayers[player.user_id];
   }
 }
 
 // Realtime購読セットアップ（positionsテーブル）
-function subscribePlayerStates(onChange) {
+function subscribePlayerStates(onChange, onRemove) {
   supabase.channel('positions_channel')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'positions' }, payload => {
-      onChange(payload.new);
+      if (payload.eventType === 'DELETE') {
+        onRemove(payload.old);
+      } else {
+        onChange(payload.new);
+      }
     })
     .subscribe();
 }
 
-// 1秒ごとに自分の位置・回転をアップデート
+let positionSyncInterval = null;
+
+// 位置・回転の定期送信を開始（1秒間隔）
 function startPositionSync() {
-  setInterval(() => {
-    if (!userId) return;
-    const pos = playerEntity.object3D.position;
-    const rot = playerEntity.object3D.rotation;
-    updatePlayerState(pos, rot.y);
-  }, 1);
-}
-
-const rot = playerEntity.object3D.rotation;
-// rotation.yはラジアンのままでOK
-updatePlayerState(pos, rot.y);
-
-if (typeof player.rotation_y === 'number') {
-  // ラジアンから度数（角度）へ変換
-  const degY = THREE.MathUtils.radToDeg(player.rotation_y);
-  ent.setAttribute('rotation', `0 ${degY} 0`);
-}
-
-
-
-
-function startPositionSync() {
-  setInterval(() => {
+  if (positionSyncInterval) clearInterval(positionSyncInterval);
+  positionSyncInterval = setInterval(() => {
     if (!userId) return;
     const pos = playerEntity.object3D.position;
     const camRot = document.querySelector('#camera').object3D.rotation;
-    updatePlayerState(pos, camRot.y);  // cameraのy回転だけ送信
+    updatePlayerState(pos, camRot.y);
   }, 10);
 }
 
+// サインインボタン押下処理
+document.getElementById('signin-button').onclick = async () => {
+  const nickname = document.getElementById('nickname').value.trim();
+  const password = document.getElementById('password').value.trim();
+  if (!nickname || !password) {
+    errorMessage.innerText = 'ニックネームとパスワードを入力';
+    return;
+  }
+  const { data, error } = await supabase.from('users').select('*').eq('nickname', nickname).eq('password', password).single();
+  if (error || !data) {
+    errorMessage.innerText = '認証失敗';
+    return;
+  }
 
+  // UI切り替え
+  document.querySelector('#outer > header').style.display = 'none';
+  aScene.style.visibility = 'visible';
+  aScene.style.opacity = '1';
+  aScene.style.display = 'block';
+
+  userId = data.id;
+  loginForm.style.display = 'none';
+  signoutButton.style.display = 'block';
+  uploadContainer.style.display = 'block';
+
+  // 初期位置登録
+  await updatePlayerState({ x: 0, y: 0, z: 0 }, 0);
+
+  // リアルタイム購読開始
+  subscribePlayerStates(onOtherPlayerUpdate, onOtherPlayerRemove);
+
+  // 位置送信開始
+  startPositionSync();
+};
+
+// ポインターロック（クリック時1回だけ）
+aScene.addEventListener('click', () => {
+  aScene.requestPointerLock();
+}, { once: true });
+
+// サインアウト処理
+signoutButton.onclick = async () => {
+  if (!userId) return location.reload();
+
+  // 位置情報削除
+  const { error } = await supabase.from('positions').delete().eq('user_id', userId);
+  if (error) {
+    console.error('位置情報削除エラー:', error);
+  } else {
+    console.log('位置情報削除成功');
+  }
+
+  // Interval停止
+  if (positionSyncInterval) {
+    clearInterval(positionSyncInterval);
+    positionSyncInterval = null;
+  }
+
+  // ロードし直し
+  location.reload();
+};
+
+// 3Dモデルアップロード処理
+document.getElementById('upload-model-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (file) userModel.setAttribute('gltf-model', URL.createObjectURL(file));
+});
+
+// シーン読み込み時のイベント（任意で）
+aScene.addEventListener('loaded', () => {
+  console.log('a-scene loaded');
+});
 </script>
-
-
-
 </body>
 </html>
