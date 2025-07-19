@@ -9,6 +9,7 @@
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <link rel="stylesheet" href="index.css">
   <style>
+    
     body { margin: 0; background: #fff; font-family: sans-serif; }
     #login-form {
       border: 3px solid rgb(72, 158, 72);
@@ -43,7 +44,7 @@
   </style>
 </head>
 <body>
-  <div id="outer">
+    <div id="outer">
     <header>
       <div id="header-inner">
         <h1>watatawa Software</h1>
@@ -77,6 +78,9 @@
       <a-asset-item id="stopModel" src="stop.glb"></a-asset-item>
       <a-asset-item id="otherModel" src="other.glb"></a-asset-item>
     </a-assets>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/examples/js/loaders/FontLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.150.1/examples/js/geometries/TextGeometry.js"></script>
+
 
     <a-sky color="#222"></a-sky>
     <a-light type="directional" position="1 3 2" intensity="1"></a-light>
@@ -100,6 +104,7 @@ const supabase = window.supabase.createClient(
 );
 
 let userId = null;
+let currentNickname = '';
 const loginForm = document.getElementById('login-form');
 const signoutButton = document.getElementById('signout-button');
 const uploadContainer = document.getElementById('upload-container');
@@ -107,63 +112,64 @@ const aScene = document.getElementById('a-scene');
 const errorMessage = document.getElementById('error-message');
 const userModel = document.getElementById('user-model');
 const playerEntity = document.getElementById('player');
-const otherPlayers = {}; // 他プレイヤー管理
 
-// movalbe-model コンポーネント定義（重複登録防止）
-if (!AFRAME.components['movable-model']) {
-  AFRAME.registerComponent('movable-model', {
-    schema: { speed: { type: 'number', default: 4 } },
-    init() {
-      this.keys = {};
-      this.camera = document.querySelector('#camera').object3D;
-      this.colliders = [
-        document.querySelector('#house').object3D,
-        document.querySelector('#tree').object3D,
-        document.querySelector('#stop').object3D
-      ];
-      window.addEventListener('keydown', e => { this.keys[e.code] = true; });
-      window.addEventListener('keyup', e => { this.keys[e.code] = false; });
-    },
-    tick(time, delta) {
-      const el = this.el.parentEl;
-      const pos = el.object3D.position.clone();
-      const move = new THREE.Vector3();
+// ここからラベル管理用グローバル変数
+const labelsContainer = document.getElementById('labels-container');
+const otherPlayers = {}; // user_id -> { entity, labelDiv }
+let camera3D = null;
 
-      if (this.keys['KeyS']) move.z -= 1;
-      if (this.keys['KeyW']) move.z += 1;
-      if (this.keys['KeyA']) move.x -= 1;
-      if (this.keys['KeyD']) move.x += 1;
-      if (move.length() === 0) return;
+// movable-model コンポーネント定義（重複登録防止）
+AFRAME.registerComponent('movable-model', {
+  schema: { speed: { type: 'number', default: 4 } },
+  init() {
+    this.keys = {};
+    this.camera = document.querySelector('#camera').object3D;
+    this.colliders = [
+      document.querySelector('#house').object3D,
+      document.querySelector('#tree').object3D,
+      document.querySelector('#stop').object3D
+    ];
+    window.addEventListener('keydown', e => { this.keys[e.code] = true; });
+    window.addEventListener('keyup', e => { this.keys[e.code] = false; });
+  },
+  tick(time, delta) {
+    const el = this.el.parentEl;
+    const pos = el.object3D.position.clone();
+    const move = new THREE.Vector3();
 
-      move.normalize();
-      const direction = new THREE.Vector3();
-      this.camera.getWorldDirection(direction);
-      direction.y = 0; direction.normalize();
-      const right = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), direction).normalize();
+    if (this.keys['KeyS']) move.z -= 1;
+    if (this.keys['KeyW']) move.z += 1;
+    if (this.keys['KeyA']) move.x -= 1;
+    if (this.keys['KeyD']) move.x += 1;
+    if (move.length() === 0) return;
 
-      const movement = new THREE.Vector3();
-      movement.addScaledVector(direction, -move.z);
-      movement.addScaledVector(right, move.x);
-      movement.normalize();
-      movement.multiplyScalar(this.data.speed * delta / 1000);
+    move.normalize();
+    const direction = new THREE.Vector3();
+    this.camera.getWorldDirection(direction);
+    direction.y = 0; direction.normalize();
+    const right = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), direction).normalize();
 
-      const nextPos = pos.clone().add(movement);
+    const movement = new THREE.Vector3();
+    movement.addScaledVector(direction, -move.z);
+    movement.addScaledVector(right, move.x);
+    movement.normalize();
 
-      const playerBox = new THREE.Box3().setFromCenterAndSize(nextPos, new THREE.Vector3(0.6, 1.5, 0.6));
-      for (let collider of this.colliders) {
-        const colliderBox = new THREE.Box3().setFromObject(collider);
-        if (colliderBox.intersectsBox(playerBox)) {
-          console.log("衝突検知：移動中止");
-          return;
-        }
-      }
+    // Shiftキー押しながら速度アップ
+    let speedMultiplier = this.keys['ShiftLeft'] || this.keys['ShiftRight'] ? 2 : 1;
 
-      el.object3D.position.copy(nextPos);
+    movement.multiplyScalar(this.data.speed * speedMultiplier * delta / 1000);
+
+    const nextPos = pos.clone().add(movement);
+    const playerBox = new THREE.Box3().setFromCenterAndSize(nextPos, new THREE.Vector3(0.6, 1.5, 0.6));
+    for (let collider of this.colliders) {
+      const colliderBox = new THREE.Box3().setFromObject(collider);
+      if (colliderBox.intersectsBox(playerBox)) return;
     }
-  });
-}
+    el.object3D.position.copy(nextPos);
+  }
+});
 
-// 位置と回転をSupabaseへアップサート
+// 位置と回転をSupabaseへアップサート（nicknameもセット）
 async function updatePlayerState(position, rotationY) {
   if (!userId) return;
   if (
@@ -181,6 +187,7 @@ async function updatePlayerState(position, rotationY) {
     y: position.y,
     z: position.z,
     rotation_y: rotationY,
+    nickname: currentNickname,  // ←ここで必ずセット
     updated_at: new Date().toISOString()
   }, { onConflict: 'user_id' });
   if (error) console.error('updatePlayerState error:', error);
@@ -195,15 +202,29 @@ function onOtherPlayerUpdate(player) {
     ent = document.createElement('a-entity');
     ent.setAttribute('gltf-model', '#otherModel');
     ent.setAttribute('scale', '2 2 2');
+
+    const text = document.createElement('a-text');
+    text.setAttribute('value', player.nickname || 'Player');
+    text.setAttribute('color', '#FFF');
+    text.setAttribute('align', 'center');
+    text.setAttribute('position', '0 3 0');
+    text.setAttribute('scale', '5 5 5');
+    ent.appendChild(text);
+
     aScene.appendChild(ent);
     otherPlayers[player.user_id] = ent;
+    ent.nicknameText = text;  // nickname更新用に保持
   }
 
   ent.setAttribute('position', `${player.x} ${player.y} ${player.z}`);
-
   if (typeof player.rotation_y === 'number') {
     const degY = THREE.MathUtils.radToDeg(player.rotation_y);
     ent.setAttribute('rotation', `0 ${degY} 0`);
+  }
+
+  // ニックネーム動的更新対応
+  if (ent.nicknameText && player.nickname) {
+    ent.nicknameText.setAttribute('value', player.nickname);
   }
 }
 
@@ -219,6 +240,7 @@ function onOtherPlayerRemove(player) {
 
 let subscription = null;
 
+// リアルタイム購読セットアップ
 function subscribePlayerStates(onChange, onRemove) {
   subscription = supabase.channel('positions_channel')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'positions' }, payload => {
@@ -241,7 +263,7 @@ function startPositionSync() {
     const pos = playerEntity.object3D.position;
     const camRot = document.querySelector('#camera').object3D.rotation;
     updatePlayerState(pos, camRot.y);
-  }, 10);
+  }, 10);  // 1秒で十分です
 }
 
 // サインインボタン押下処理
@@ -257,6 +279,8 @@ document.getElementById('signin-button').onclick = async () => {
     errorMessage.innerText = '認証失敗';
     return;
   }
+
+  currentNickname = nickname; // ニックネームを保存
 
   // UI切り替え
   document.querySelector('#outer > header').style.display = 'none';
@@ -284,8 +308,7 @@ aScene.addEventListener('click', () => {
   aScene.requestPointerLock();
 }, { once: true });
 
-
-
+// サインアウト処理
 signoutButton.onclick = async () => {
   if (!userId) {
     location.reload();
@@ -293,13 +316,12 @@ signoutButton.onclick = async () => {
   }
 
   try {
-    // 1. 位置同期を先に停止する（これが一番重要）
     if (positionSyncInterval) {
       clearInterval(positionSyncInterval);
       positionSyncInterval = null;
     }
 
-    // 2. positionsテーブルから自分のデータを削除
+    // 位置情報削除
     const { error: deleteError } = await supabase.from('positions').delete().eq('user_id', userId);
     if (deleteError) {
       console.error('位置削除エラー:', deleteError);
@@ -307,19 +329,153 @@ signoutButton.onclick = async () => {
       return;
     }
 
-    // 3. 購読解除
     if (subscription) {
       await subscription.unsubscribe();
       subscription = null;
     }
 
-    // 4. ユーザーIDクリア
     userId = null;
+    currentNickname = '';
 
-    // 5. 自分のモデル非表示
+    // 自分のモデル非表示
     playerEntity.setAttribute('visible', 'false');
 
-    // 6. UI切り替え
+    // UI切り替え
+    document.querySelector('header').style.display = 'flex';
+    loginForm.style.display = 'flex';
+    signoutButton.style.display = 'none';
+    uploadContainer.style.display = 'none';
+    aScene.style.visibility = 'hidden';
+    aScene.style.opacity = '0';
+
+  } catch (e) {
+    console.error('サインアウト時例外:', e);
+  }
+
+  
+};
+
+function createOrUpdateLabel(player) {
+  let obj = otherPlayers[player.user_id];
+  if (!obj) {
+    // 3Dモデル作成
+    let ent = document.createElement('a-entity');
+    ent.setAttribute('gltf-model', '#otherModel');
+    ent.setAttribute('scale', '2 2 2');
+    aScene.appendChild(ent);
+
+    // ラベルDOM作成
+    let label = document.createElement('div');
+    label.className = 'nickname-label';
+    label.textContent = player.nickname || 'Player';
+    labelsContainer.appendChild(label);
+
+    otherPlayers[player.user_id] = { entity: ent, labelDiv: label };
+    obj = otherPlayers[player.user_id];
+  }
+
+  obj.entity.setAttribute('position', `${player.x} ${player.y} ${player.z}`);
+
+  if (typeof player.rotation_y === 'number') {
+    const degY = THREE.MathUtils.radToDeg(player.rotation_y);
+    obj.entity.setAttribute('rotation', `0 ${degY} 0`);
+  }
+
+  if (obj.labelDiv.textContent !== player.nickname) {
+    obj.labelDiv.textContent = player.nickname;
+  }
+}
+
+function removePlayerLabel(player) {
+  const obj = otherPlayers[player.user_id];
+  if (!obj) return;
+  labelsContainer.removeChild(obj.labelDiv);
+  aScene.removeChild(obj.entity);
+  delete otherPlayers[player.user_id];
+}
+
+// 他プレイヤー表示更新コールバックを修正
+function onOtherPlayerUpdate(player) {
+  if (!userId || player.user_id === userId) return;
+  createOrUpdateLabel(player);
+}
+
+function onOtherPlayerRemove(player) {
+  if (!userId) return;
+  removePlayerLabel(player);
+}
+
+// カメラ取得してラベルの位置更新ループ開始
+aScene.addEventListener('loaded', () => {
+  camera3D = document.querySelector('#camera').object3D;
+  requestAnimationFrame(updateLabels);
+});
+
+function updateLabels() {
+  if (!camera3D) {
+    requestAnimationFrame(updateLabels);
+    return;
+  }
+
+  for (const userId in otherPlayers) {
+    const { entity, labelDiv } = otherPlayers[userId];
+    const worldPos = new THREE.Vector3();
+    entity.object3D.getWorldPosition(worldPos);
+    worldPos.y += 2;
+
+    const pos = worldPos.clone().project(camera3D);
+
+    if (pos.z < -1 || pos.z > 1) {
+      labelDiv.style.display = 'none';
+      continue;
+    }
+
+    const x = (pos.x * 0.5 + 0.5) * window.innerWidth;
+    const y = (-pos.y * 0.5 + 0.5) * window.innerHeight;
+
+    labelDiv.style.transform = `translate(-50%, -100%) translate(${x}px, ${y}px)`;
+    labelDiv.style.display = 'block';
+  }
+
+  requestAnimationFrame(updateLabels);
+}
+
+// ここからはサインイン処理、位置送信処理など省略（そのまま）
+// ...
+
+// サインアウト処理内でラベル削除は呼ばない代わりに
+signoutButton.onclick = async () => {
+  if (!userId) {
+    location.reload();
+    return;
+  }
+
+  try {
+    if (positionSyncInterval) {
+      clearInterval(positionSyncInterval);
+      positionSyncInterval = null;
+    }
+
+    // 位置情報削除
+    const { error: deleteError } = await supabase.from('positions').delete().eq('user_id', userId);
+    if (deleteError) {
+      console.error('位置削除エラー:', deleteError);
+      alert('サインアウト時にエラーが発生しました。');
+      return;
+    }
+
+    if (subscription) {
+      await subscription.unsubscribe();
+      subscription = null;
+    }
+
+    userId = null;
+    currentNickname = '';
+
+    // 自分のモデル非表示
+    playerEntity.setAttribute('visible', 'false');
+
+    // UI切り替え
     document.querySelector('header').style.display = 'flex';
     loginForm.style.display = 'flex';
     signoutButton.style.display = 'none';
@@ -332,9 +488,143 @@ signoutButton.onclick = async () => {
   }
 };
 
+// ニックネームを描画したCanvasテクスチャを作る関数
+function createNameTexture(name) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;  // 大きめに設定
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  
+  // 背景を透明に
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 文字の描画設定
+  ctx.font = '64px sans-serif';
+  ctx.fillStyle = 'white';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'black';
+  ctx.shadowBlur = 4;
+
+  ctx.fillText(name, canvas.width / 2, canvas.height / 2);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.minFilter = THREE.LinearFilter;  // 滑らかに
+  texture.magFilter = THREE.LinearFilter;
+
+  return texture;
+}
+
+function updateNameTexture(texture, name) {
+  const canvas = texture.image;
+  const ctx = canvas.getContext('2d');
+
+  // クリアして透明化
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // フォントと文字の描画
+  ctx.font = '64px sans-serif';
+  ctx.fillStyle = 'white';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'black';
+  ctx.shadowBlur = 4;
+
+  ctx.fillText(name, canvas.width / 2, canvas.height / 2);
+
+  texture.needsUpdate = true;
+}
+
+
+// プレイヤーエンティティに名前用のPlaneを追加する関数
+function addNameLabelToEntity(entity, name) {
+  // すでにあれば削除してから作り直す
+  const existing = entity.getObject3D('nameLabel');
+  if (existing) {
+    entity.removeObject3D('nameLabel');
+  }
+
+  const texture = createNameTexture(name);
+  const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+  const sprite = new THREE.Sprite(material);
+
+  sprite.name = 'nameLabel';
+  sprite.scale.set(4, 1, 3);  // サイズ調整（横長）
+  sprite.position.set(0, 5, 0); // 頭上に配置
+
+  entity.setObject3D('nameLabel', sprite);
+}
+
+// 他プレイヤー更新時に呼ぶ例
+function onOtherPlayerUpdate(player) {
+  if (!userId || player.user_id === userId) return;
+
+  let ent = otherPlayers[player.user_id];
+  if (!ent) {
+    ent = document.createElement('a-entity');
+    ent.setAttribute('gltf-model', '#otherModel');
+    ent.setAttribute('scale', '2 2 2');
+    aScene.appendChild(ent);
+    otherPlayers[player.user_id] = ent;
+  }
+
+  ent.setAttribute('position', `${player.x} ${player.y} ${player.z}`);
+
+  if (typeof player.rotation_y === 'number') {
+    const degY = THREE.MathUtils.radToDeg(player.rotation_y);
+    ent.setAttribute('rotation', `0 ${degY} 0`);
+  }
+
+  // ニックネーム表示用のSpriteを追加 or 更新
+  addNameLabelToEntity(ent, player.nickname || 'Player');
+}
+
+
+const playerLastUpdate = {};
+
+function onOtherPlayerUpdate(player) {
+  if (!userId || player.user_id === userId) return;
+
+  let ent = otherPlayers[player.user_id];
+  if (!ent) {
+    ent = document.createElement('a-entity');
+    ent.setAttribute('gltf-model', '#otherModel');
+    ent.setAttribute('scale', '2 2 2');
+    aScene.appendChild(ent);
+    otherPlayers[player.user_id] = ent;
+  }
+  ent.setAttribute('position', `${player.x} ${player.y} ${player.z}`);
+
+  if (typeof player.rotation_y === 'number') {
+    const degY = THREE.MathUtils.radToDeg(player.rotation_y);
+    ent.setAttribute('rotation', `0 ${degY} 0`);
+  }
+
+  addNameLabelToEntity(ent, player.nickname || 'Player');
+
+  // 最終更新時間を記録
+  playerLastUpdate[player.user_id] = Date.now();
+}
+
+// 死亡判定ループ
+setInterval(() => {
+  const now = Date.now();
+  for (const user_id in otherPlayers) {
+    if (!playerLastUpdate[user_id]) continue;
+    if (now - playerLastUpdate[user_id] > 5000) {
+      console.log('接続切れ: ', user_id);
+      const ent = otherPlayers[user_id];
+      if (ent) ent.setAttribute('visible', 'false');
+    } else {
+      otherPlayers[user_id].setAttribute('visible', 'true');
+    }
+  }
+}, 1000);
 
 
 
 </script>
+
+
 </body>
 </html>
