@@ -217,9 +217,10 @@ function onOtherPlayerRemove(player) {
   }
 }
 
-// Realtime購読セットアップ（positionsテーブル）
+let subscription = null;
+
 function subscribePlayerStates(onChange, onRemove) {
-  supabase.channel('positions_channel')
+  subscription = supabase.channel('positions_channel')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'positions' }, payload => {
       if (payload.eventType === 'DELETE') {
         onRemove(payload.old);
@@ -283,38 +284,57 @@ aScene.addEventListener('click', () => {
   aScene.requestPointerLock();
 }, { once: true });
 
-// サインアウト処理
+
+
 signoutButton.onclick = async () => {
-  if (!userId) return location.reload();
-
-  // 位置情報削除
-  const { error } = await supabase.from('positions').delete().eq('user_id', userId);
-  if (error) {
-    console.error('位置情報削除エラー:', error);
-  } else {
-    console.log('位置情報削除成功');
+  if (!userId) {
+    location.reload();
+    return;
   }
 
-  // Interval停止
-  if (positionSyncInterval) {
-    clearInterval(positionSyncInterval);
-    positionSyncInterval = null;
-  }
+  try {
+    // 1. 位置同期を先に停止する（これが一番重要）
+    if (positionSyncInterval) {
+      clearInterval(positionSyncInterval);
+      positionSyncInterval = null;
+    }
 
-  // ロードし直し
-  location.reload();
+    // 2. positionsテーブルから自分のデータを削除
+    const { error: deleteError } = await supabase.from('positions').delete().eq('user_id', userId);
+    if (deleteError) {
+      console.error('位置削除エラー:', deleteError);
+      alert('サインアウト時にエラーが発生しました。');
+      return;
+    }
+
+    // 3. 購読解除
+    if (subscription) {
+      await subscription.unsubscribe();
+      subscription = null;
+    }
+
+    // 4. ユーザーIDクリア
+    userId = null;
+
+    // 5. 自分のモデル非表示
+    playerEntity.setAttribute('visible', 'false');
+
+    // 6. UI切り替え
+    document.querySelector('header').style.display = 'flex';
+    loginForm.style.display = 'flex';
+    signoutButton.style.display = 'none';
+    uploadContainer.style.display = 'none';
+    aScene.style.visibility = 'hidden';
+    aScene.style.opacity = '0';
+
+  } catch (e) {
+    console.error('サインアウト時例外:', e);
+  }
 };
 
-// 3Dモデルアップロード処理
-document.getElementById('upload-model-input').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (file) userModel.setAttribute('gltf-model', URL.createObjectURL(file));
-});
 
-// シーン読み込み時のイベント（任意で）
-aScene.addEventListener('loaded', () => {
-  console.log('a-scene loaded');
-});
+
+
 </script>
 </body>
 </html>
