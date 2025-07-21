@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <link rel="icon" href="icon.png" type="image/x-icon">
+<meta charset="UTF-8">
+<title>アカウント作成</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="ページの説明">
+<meta name="keywords" content="ページのキーワードA,B,C">
+<link rel="stylesheet" href="index.css">
+<meta charset="UTF-8" />
+<audio id="remote-audio" autoplay></audio>
+
+
+<style>
+        body { margin: 0; background: #fff; font-family: sans-serif; }
+    #login-form {
+      border: 3px solid rgb(72, 117, 158);
+      padding: 20px;
+      width: 300px;
+      margin: 100px auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js" defer></script>
+</head>
+<body>
+    <div id="outer">
+<header><div id="header-inner"><h1>watatawa Software</h1><a href="index.html">トップページ</a> ｜<a href="market.html">マーケット【ガフ市】</a> ｜ <a href="download.html">ダウンロード</a>  ｜ <a href="post.html">掲示板</a> ｜  <a href="guff.html">ガフ札情報</a>  ｜<a href="guffimage.html">ガフの写真集</a> ｜ <a href="chat.html">チャット</a>｜ <a href="social.html">ソーシャル</a>
+<main><div id="text">
+    <div id="login-form">
+<h2>ソーシャルアカウントを作成</h2>
+<p>アカウントを作成するとすべてのサービスをご利用いただけます。</p>
+<div id="auth">
+   <input type="text" id="nickname" placeholder="ニックネーム" />
+    <input type="password" id="password" placeholder="パスワード" />
+    <hr>
+    
+  <button id="signup-btn">新規登録</button><!-- これがないとダメ！ -->
+<input type="checkbox" id="terms-checkbox"> <a href="riyoukiyaku.html">利用規約</a>に同意します
+
+
+
+
+     <div style="white-space: nowrap;">
+ </div>
+ 
+
+</div>
+</div>
+
+
+
+
+
+</div>
+
+</div>
+</main>
+<aside>
+<div class="side-title">menu</div>
+<a href="otoiawase.html">お問い合わせフォーム</a>
+<div class="side">
+<ul>
+
+
+ 
+
+</ul>
+</div>
+</aside>
+<footer>all rights reserved ©watatawa Software 2021~2025</footer>
+
+<script defer>
+    const displayedMessageIds = new Set();  // ← すでに表示されたメッセージIDを記録
+
+document.addEventListener("DOMContentLoaded", () => {
+  const supabaseUrl = "https://mbjvhxpozxylwcemnbcr.supabase.co";
+  const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ianZoeHBvenh5bHdjZW1uYmNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIxMzM3MzAsImV4cCI6MjA2NzcwOTczMH0.JddcQ5SoHfR-OWGma__X8iP0OphdnLHOPdYjm3Ca2Qo";
+  const supabaseClient = supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+  let currentUser = null;
+  let currentPartner = null;
+  let messagePolling = null;
+  let partners = [];
+
+  // DOM Elements
+  const partnerListEl = document.getElementById("partner-list");
+  const currentPartnerEl = document.getElementById("current-partner");
+  const unreadBadgeEl = document.getElementById("unread-badge");
+
+  document.getElementById("signup-btn").onclick = signup;
+  document.getElementById("login-btn").onclick = login;
+  document.getElementById("send-btn").onclick = sendMessage;
+  document.getElementById("logout-btn").onclick = logout;
+  document.getElementById("add-partner-btn").onclick = addPartner;
+
+
+  async function signup() {
+    const nickname = document.getElementById("nickname").value.trim();
+    const password = document.getElementById("password").value;
+      const agreed = document.getElementById("terms-checkbox").checked;
+    if (!nickname || !password) return alert("ニックネームとパスワードを入力してください");
+         if (!agreed) return alert("利用規約に同意してください");
+
+    const { data: exists, error: existsErr } = await supabaseClient
+      .from("users")
+      .select("id")
+      .eq("nickname", nickname)
+      .single();
+    if (exists) return alert("ニックネームは既に使われています");
+    if (existsErr && existsErr.code !== 'PGRST116') return alert("登録エラー：" + existsErr.message);
+
+
+
+
+
+    const { error } = await supabaseClient
+      .from("users")
+      .insert({ nickname, password });
+
+    if (error) return alert("登録失敗: " + error.message);
+    alert("アカウントが作成されました。");
+    window.history.back();
+
+  }
+
+  async function login() {
+    const nickname = document.getElementById("nickname").value.trim();
+    const password = document.getElementById("password").value;
+    if (!nickname || !password) return alert("ニックネームとパスワードを入力してください");
+
+    const { data, error } = await supabaseClient
+      .from("users")
+      .select("*")
+      .eq("nickname", nickname)
+      .eq("password", password)
+      .single();
+
+    if (error || !data) return alert("ログイン失敗: ニックネームまたはパスワードが間違っています");
+
+    currentUser = data;
+    localStorage.setItem("user", JSON.stringify(currentUser));
+    showChat();
+    loadPartnersFromDB();
+  }
+
+  function showChat() {
+    document.getElementById("auth").style.display = "none";
+    document.getElementById("chat").style.display = "block";
+
+    document.getElementById("my-nickname").textContent = currentUser.nickname;
+
+    if (messagePolling) clearInterval(messagePolling);
+    messagePolling = setInterval(loadMessages, 1000);
+  }
+
+
+
+
+  
+});
+
+
+
+</script>
+
+</body>
+</html>

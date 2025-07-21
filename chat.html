@@ -13,7 +13,7 @@
 
 <title>チャット</title>
 <style>
-  body { font-family: sans-serif; max-width: 600px; margin: auto; }
+
   #messages div {
     display: block;
     border-bottom: 1px solid #ccc;
@@ -152,14 +152,36 @@
     font-weight: bold;
   }
    #logout-btn {
-    background-color: #444;
+    background-color: #b3ec8c;
     border: none;
-    color: white;
+    color: rgb(0, 0, 0);
     padding: 8px 16px;
     border-radius: 4px;
     cursor: pointer;
     font-weight: bold;
   }
+   body { margin: 0; background: #fff; font-family: sans-serif; }
+
+    #auth {
+      border: 3px solid rgb(147, 158, 72);
+      padding: 20px;
+      width: 300px;
+      margin: 100px auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+       #signup-btn {
+    background-color: #83e87a;
+    border: none;
+    color: white;
+    padding: 0px 0px;
+    border-radius: 0px;
+    cursor: pointer;
+    font-weight: bold;
+       }
+       
+    
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js" defer></script>
 </head>
@@ -167,13 +189,25 @@
     <div id="outer">
 <header><div id="header-inner"><h1>watatawa Software</h1><a href="index.html">トップページ</a> ｜<a href="market.html">マーケット【ガフ市】</a> ｜ <a href="download.html">ダウンロード</a>  ｜ <a href="post.html">掲示板</a> ｜  <a href="guff.html">ガフ札情報</a>  ｜<a href="guffimage.html">ガフの写真集</a> ｜ <a href="chat.html">チャット</a>｜ <a href="social.html">ソーシャル</a>
 <main><div id="text">
-<h2>個人チャット</h2>
+
 
 <div id="auth">
+ <h2>チャット</h2>
+ <p>ソーシャルアカウントでサインイン</p>
   <input id="nickname" placeholder="ニックネーム" />
   <input id="password" type="password" placeholder="パスワード" />
-  <button id="signup-btn">新規登録</button>
+  <button id="signup-btn"></button>
+  <hr>
   <button id="login-btn">サインイン</button>
+     <div style="white-space: nowrap;">
+
+  <a href="otoiawase.html">パスワードを忘れた場合</a>｜
+  <a href="create.html">アカウントを作成</a>
+    
+ 
+ 
+
+</div>
 </div>
 
 <div id="chat">
@@ -215,6 +249,8 @@
 <aside>
 <div class="side-title">menu</div>
 <a href="otoiawase.html">お問い合わせフォーム</a>
+<br>
+<a href="riyoukiyaku.html">利用規約</a>
 <div class="side">
 <ul>
     <audio id="call-audio" src="call.mp3" preload="auto"></audio>
