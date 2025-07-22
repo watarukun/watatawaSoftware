@@ -103,6 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const nickname = document.getElementById("nickname").value.trim();
   const password = document.getElementById("password").value;
   const agreed = document.getElementById("terms-checkbox").checked;
+
   if (!nickname || !password) return alert("ニックネームとパスワードを入力してください");
   if (!agreed) return alert("利用規約に同意してください");
 
@@ -112,44 +113,57 @@ document.addEventListener("DOMContentLoaded", () => {
     .select("id")
     .eq("nickname", nickname)
     .single();
+
   if (exists) return alert("ニックネームは既に使われています");
   if (existsErr && existsErr.code !== 'PGRST116') return alert("登録エラー：" + existsErr.message);
 
-  // アカウント作成
-  const { data: newUser, error } = await supabaseClient
+  // 新規ユーザー作成
+  const { data: newUser, error: insertErr } = await supabaseClient
     .from("users")
     .insert({ nickname, password })
     .select()
     .single();
-  if (error || !newUser) return alert("登録失敗: " + error?.message);
+
+  if (insertErr || !newUser) return alert("登録失敗: " + insertErr?.message);
 
   // 「ようこそ」ユーザー取得
-  const { data: welcomeUser, error: welcomeErr } = await supabaseClient
+  const { data: welcomeUser } = await supabaseClient
     .from("users")
     .select("*")
     .eq("nickname", "ようこそ")
     .single();
 
+  // パートナー欄に「ようこそ」を追加
   if (welcomeUser) {
-    // パートナーに追加
     await supabaseClient.from("user_partners").insert({
       user_id: newUser.id,
       partner_nickname: welcomeUser.nickname
     });
 
-    // 「ようこそ」から新規ユーザーに自動メッセージ
-    const welcomeText = `ようこそ、${newUser.nickname}さん　追加してはじめよう！`;
-    const { error: messageErr } = await supabaseClient.from("messages").insert({
-      sender_id: welcomeUser.id,
-      receiver_id: newUser.id,
-      content: welcomeText 
-    });
-    if (messageErr) console.error("メッセージ送信失敗:", messageErr.message);
+    // ✅ メッセージを2件送信
+    const messages = [
+      {
+        sender_id: welcomeUser.id,
+        receiver_id: newUser.id,
+        content: `ようこそ、${newUser.nickname}さん。　追加して始めよう！`
+     
+      },
+  
+      {
+        sender_id: welcomeUser.id,
+        receiver_id: newUser.id,
+        content: "このアカウントは送信専用です。メッセージには応答できません",
+
+      }
+    ];
+
+    await supabaseClient.from("messages").insert(messages);
   }
 
   alert("アカウントが作成されました！");
   window.history.back();
 }
+
 
 
   async function login() {

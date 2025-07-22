@@ -98,11 +98,13 @@
     color: #f00;
   }
   #partner-add {
+    color: #313131;
     display: flex;
     gap: 8px;
     margin-bottom: 12px;
   }
   #partner-add input {
+    color: #313131;
     flex-grow: 1;
     padding: 8px;
   }
@@ -130,7 +132,7 @@
   }
   /* 送信ボタン */
   #send-btn {
-    background-color: #e6e7ba;
+    background-color: #4a4a4a00;
     border: none;
     color: white;
     padding: 8px 16px;
@@ -139,16 +141,19 @@
     font-weight: bold;
   }
   #send-btn:hover {
-    background-color: #c1c19d;
+    background-color: rgb(146, 146, 146);
   }
    #call-btn {
-    background-color: #e6e7ba;
+    background-color: #4a4a4a00;
     border: none;
     color: white;
     padding: 8px 16px;
     border-radius: 2px;
     cursor: pointer;
     font-weight: bold;
+  }
+  #call-btn:hover{
+    background-color: #9a9a9a;
   }
    #logout-btn {
     background-color: #ffffff77;
@@ -181,10 +186,10 @@
        }
 
            .row {
-      border: 3px solid rgb(255, 255, 255);
-      background-color: #e6e7ba;
-      padding: 3px;
-      width: 520px;
+      border: 1.5px solid rgb(195, 195, 195);
+      background-color: #6f6f6f;
+      padding: 4px;
+      width: 535px;
       margin: 70px auto;
       display: none;
     
@@ -225,12 +230,36 @@
       #add-partner-btn {
     background-color: #f1f1f1;
     border: none;
-    color: rgb(28, 28, 28);
+    color: rgb(77, 77, 77);
     padding: 8px 16px;
     border-radius: 4px;
     cursor: pointer;
     font-weight: bold;
-  }   
+  }  
+  .custom-file-upload {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: #4a4a4a;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.custom-file-upload:hover {
+  background-color: #313131;
+}
+
+#image-preview img {
+  max-width: 120px;
+  max-height: 120px;
+  border-radius: 8px;
+  object-fit: cover;
+  display: block;
+}
+
+
     
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js" defer></script>
@@ -290,7 +319,8 @@
   <input id="msg" placeholder="メッセージ" />
 
   <button id="send-btn" title="メッセージを送信">＞</button><button id="call-btn" title="音声通話を発信">☎</button>
-<input type="file" id="file" accept="image/*,video/*"> 
+ 
+<input type="file" id="file" accept="image/*,video/*" style="color: #f1f1f1;"> 
  </div>
 
 <hr>
@@ -374,6 +404,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (error) return alert("登録失敗: " + error.message);
     alert("登録成功！ログインしてください");
   }
+  
+
 
   async function login() {
     const nickname = document.getElementById("nickname").value.trim();
@@ -497,21 +529,26 @@ async function sendMessage() {
   let unreadCount = 0;
 
   for (const msg of filtered) {
-    if (displayedMessageIds.has(msg.id)) continue; // ← 再描画防止
-    displayedMessageIds.add(msg.id);
+  if (displayedMessageIds.has(msg.id)) continue;
+  displayedMessageIds.add(msg.id);
 
-    const div = document.createElement("div");
-    div.dataset.messageId = msg.id;
+  const div = document.createElement("div");
+  div.dataset.messageId = msg.id;
 
-    const senderLabel = msg.sender_id === currentUser.id ? "自分" : "相手";
-    const messageText = insertLineBreaks(msg.content || "", 30);
-    const timestamp = new Date(msg.created_at).toLocaleString();
+  // ★ここでニックネームに変更
+  const senderLabel = msg.sender_id === currentUser.id ? currentUser.nickname : toUser.nickname;
 
-    div.innerHTML = `
-      <span class="message-info">${senderLabel}</span>
-      <span class="message-content">${messageText}</span>
-      <span class="timestamp">${timestamp}</span>
-    `;
+  const messageText = insertLineBreaks(msg.content || "", 30);
+  const timestamp = new Date(msg.created_at).toLocaleString();
+
+  div.innerHTML = `
+    <span class="message-info">${senderLabel}</span>
+    <span class="message-content">${messageText}</span>
+    <span class="timestamp">${timestamp}</span>
+  `;
+
+  // 画像・動画の挿入処理...
+
 
     if (msg.image_url) {
       const img = document.createElement("img");
@@ -548,6 +585,7 @@ async function sendMessage() {
       unreadCount++;
     }
   }
+  
 
   unreadBadgeEl.textContent = unreadCount > 0 ? `未読メッセージ: ${unreadCount}` : "";
 }
@@ -828,7 +866,7 @@ supabaseClient.channel("calls")
       callAudio.currentTime = 0;
       callAudio.play().catch(e => console.warn("着信音再生失敗:", e));
 
-      const accept = confirm(`「${callerUser.nickname}」から通話着信！受けますか？`);
+      const accept = confirm(`INCOMEING CALL 「${callerUser.nickname}」からの着信`);
       if (!accept) return;
 
       currentPartner = callerUser.nickname; // 通話相手として設定
