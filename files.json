@@ -1,0 +1,16 @@
+[
+  { "title": "watatawa Software", "file": "index.html" },
+  { "title": "掲示板", "file": "post.html" },
+  { "title": "お問い合わせ", "file": "otoiawase.html" },
+  { "title": "ソーシャル", "file": "social.html" },
+    { "title": "チャット", "file": "chat.html" },
+      { "title": "ダウンロード", "file": "download.html" },
+       { "title": "アカウント", "file": "create.html" },
+        { "title": "利用規約", "file": "riyoukiyaku.html" },
+         { "title": "ガフ", "file": "guffimage.html" },
+           { "title": "ガフ", "file": "market.html" },
+             { "title": "ガフ", "file": "guff.html" }
+
+    
+
+]
