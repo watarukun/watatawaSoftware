@@ -100,33 +100,57 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
   async function signup() {
-    const nickname = document.getElementById("nickname").value.trim();
-    const password = document.getElementById("password").value;
-      const agreed = document.getElementById("terms-checkbox").checked;
-    if (!nickname || !password) return alert("ニックネームとパスワードを入力してください");
-         if (!agreed) return alert("利用規約に同意してください");
+  const nickname = document.getElementById("nickname").value.trim();
+  const password = document.getElementById("password").value;
+  const agreed = document.getElementById("terms-checkbox").checked;
+  if (!nickname || !password) return alert("ニックネームとパスワードを入力してください");
+  if (!agreed) return alert("利用規約に同意してください");
 
-    const { data: exists, error: existsErr } = await supabaseClient
-      .from("users")
-      .select("id")
-      .eq("nickname", nickname)
-      .single();
-    if (exists) return alert("ニックネームは既に使われています");
-    if (existsErr && existsErr.code !== 'PGRST116') return alert("登録エラー：" + existsErr.message);
+  // 重複チェック
+  const { data: exists, error: existsErr } = await supabaseClient
+    .from("users")
+    .select("id")
+    .eq("nickname", nickname)
+    .single();
+  if (exists) return alert("ニックネームは既に使われています");
+  if (existsErr && existsErr.code !== 'PGRST116') return alert("登録エラー：" + existsErr.message);
 
+  // アカウント作成
+  const { data: newUser, error } = await supabaseClient
+    .from("users")
+    .insert({ nickname, password })
+    .select()
+    .single();
+  if (error || !newUser) return alert("登録失敗: " + error?.message);
 
+  // 「ようこそ」ユーザー取得
+  const { data: welcomeUser, error: welcomeErr } = await supabaseClient
+    .from("users")
+    .select("*")
+    .eq("nickname", "ようこそ")
+    .single();
 
+  if (welcomeUser) {
+    // パートナーに追加
+    await supabaseClient.from("user_partners").insert({
+      user_id: newUser.id,
+      partner_nickname: welcomeUser.nickname
+    });
 
-
-    const { error } = await supabaseClient
-      .from("users")
-      .insert({ nickname, password });
-
-    if (error) return alert("登録失敗: " + error.message);
-    alert("アカウントが作成されました。");
-    window.history.back();
-
+    // 「ようこそ」から新規ユーザーに自動メッセージ
+    const welcomeText = `ようこそ、${newUser.nickname}さん　追加してはじめよう！`;
+    const { error: messageErr } = await supabaseClient.from("messages").insert({
+      sender_id: welcomeUser.id,
+      receiver_id: newUser.id,
+      content: welcomeText 
+    });
+    if (messageErr) console.error("メッセージ送信失敗:", messageErr.message);
   }
+
+  alert("アカウントが作成されました！");
+  window.history.back();
+}
+
 
   async function login() {
     const nickname = document.getElementById("nickname").value.trim();
