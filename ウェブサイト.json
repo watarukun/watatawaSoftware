@@ -1,0 +1,25 @@
+[
+  { "title": "watatawa Software", "file": "index.html" },
+  { "title": "掲示板", "file": "post.html" },
+  { "title": "お問い合わせ", "file": "otoiawase.html" },
+  { "title": "ソーシャル", "file": "social.html" },
+    { "title": "チャット", "file": "chat.html" },
+      { "title": "ダウンロード", "file": "download.html" },
+       { "title": "アカウントを作成", "file": "create.html" },
+        { "title": "利用規約", "file": "riyoukiyaku.html" },
+         { "title": "ガフの動画", "file": "guffimage.html" },
+           { "title": "ガフショッピング", "file": "market.html" },
+             { "title": "ガフ", "file": "guff.html" },
+               { "title": "watatawa Software", "file": "index.html" },
+  { "title": "けいじばん", "file": "post.html" },
+  { "title": "おといあわせ", "file": "otoiawase.html" },
+  { "title": "そーしゃる", "file": "social.html" },
+    { "title": "ちゃっと", "file": "chat.html" },
+      { "title": "わたたわRPG", "file": "download.html" },
+       { "title": "あかうんと", "file": "create.html" },
+        { "title": "りようきやく", "file": "riyoukiyaku.html" }
+         
+
+    
+
+]

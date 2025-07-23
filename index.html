@@ -1,110 +1,171 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<link rel="icon" href="icon.png" type="image/x-icon">
-<meta charset="UTF-8">
-<title>watatawa Software</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="ページの説明">
-<meta name="keywords" content="ページのキーワードA,B,C">
-<link rel="stylesheet" href="index.css">
+  <meta charset="UTF-8">
+  <title>watatawa Software</title>
+  <link rel="icon" href="icon.png" type="image/x-icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ページの説明">
+  <meta name="keywords" content="ページのキーワードA,B,C">
+  <link rel="stylesheet" href="index.css">
 </head>
 <style>
+  input {
+    width: 15em;
+    height: 1.4em;
+}
+
+ 
+ 
 
 </style>
 <body>
-<div id="outer">
-<header><div id="header-inner"><h1>watatawa Software</h1><a href="index.html">トップページ</a> ｜<a href="market.html">マーケット【ガフ市】</a> ｜ <a href="download.html">ダウンロード</a>  ｜ <a href="post.html">掲示板</a> ｜  <a href="guff.html">ガフ札情報</a>  ｜<a href="guffimage.html">ガフの写真集</a> ｜ <a href="chat.html">チャット</a>｜ <a href="social.html">ソーシャル</a>
+  <div id="outer">
+    <header>
+      <div id="header-inner">
+        <h1>watatawa Software</h1>
+        <a href="index.html">トップページ</a> ｜ 
+        <a href="market.html">マーケット【ガフ市】</a> ｜ 
+        <a href="download.html">ダウンロード</a> ｜ 
+        <a href="post.html">掲示板</a> ｜  
+        <a href="guff.html">ガフ札情報</a> ｜ 
+        <a href="guffimage.html">ガフの写真集</a> ｜ 
+        <a href="chat.html">チャット</a>｜ 
+        <a href="social.html">ソーシャル</a>
+      </div>
+    </header>
 
-</div></header>
-<br>
-<main><div id="text">
-  <br>
-<h2>トップページ</h2><label for="fruit">言語：</label>
-<select id="language" name="">
-  <option value="japanese">日本語</option>
-  </select>　　　　　<input type="text" id="searchInput" placeholder="キーワードを入力">
-  <button onclick="searchFiles()">検索</button><p>すべてのジャンル</p>
-  <div id="results"></div>
+    <main>
+      <div id="text">
+        <br>
+        <br>
+        <h2>トップページ</h2>
+        <label>言語：</label>
+        <select id="language">
+          <option value="japanese">日本語</option>
+        </select>
 
+        <label>ジャンル：</label>
+        <select id="genre" onchange="loadGenreData()">
+          <option value="すべて">すべて</option>
+          <option value="ウェブサイト">ウェブサイト</option>
+          <option value="掲示板スレッド">掲示板スレッド</option>
+        </select>
 
+        　
+        <input type="text" id="searchInput" placeholder="キーワードを入力">
+        <button onclick="searchFiles()">検索　　</button>
+        <div id="results"></div>
 
-</select>
-<hr>
-<p>制作目標</p>
-<p>ソーシャルの作成</p>
-  
-  <p>ドメインの変更</p>
+        <hr>
+        <p>制作目標</p>
+        <p>ソーシャルの作成</p>
+        <p>ドメインの変更</p>
+        <p>みんなに宣伝</p>
 
+        <h4>お知らせ</h4>
+        <h3>新しく1:1でチャットができるようになりました。</h3>
+        <h4>掲示板のUIを変更</h4>
+        <p>なんかトップページのくせに情報量少なすぎて草</p>
+        <img src="okok.jpg" width="184" height="31" alt="自由利用マーク">
+        <img src="ie.gif" width="90" height="70" alt="ie">
+      </div>
+    </main>
 
+    <aside>
+      <div class="side-title">menu</div>
+      <a href="otoiawase.html">お問い合わせフォーム</a><br>
+      <a href="riyoukiyaku.html">利用規約</a>
+    </aside>
 
+    <footer>all rights reserved ©watatawa Software 2021~2025</footer>
+  </div>
 
-  
- 
-<p>みんなに宣伝</p>
-<h4>お知らせ</h4>
-  <h3>新しく1:1でチャットができるようになりました。</h3>
-  <h4>掲示板のUIを変更</h4>
-  
-<p>なんかトップページのくせに情報量少なすぎて草</p>
-<img src="okok.jpg" width="184" height="31" border="0" alt="自由利用マーク">
-<img src="ie.gif" width="90" height="70" alt="ie">
-
-  
-
-
-
-</div>
-</main>
-<aside>
-<div class="side-title">menu</div>
-<a href="otoiawase.html">お問い合わせフォーム</a>
-<br>
-<a href="riyoukiyaku.html">利用規約</a>
-<div class="side">
-<ul>
-    <script>
+  <!-- 🔧 JavaScript を body の最後にまとめて -->
+  <script>
     let files = [];
 
-    // JSONファイル読み込み
-    fetch('files.json')
-      .then(res => res.json())
-      .then(data => files = data);
+    function loadGenreData() {
+      const genre = document.getElementById('genre').value;
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '';
 
-  function searchFiles() {
-  const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+      if (!genre) {
+        files = [];
+        resultsDiv.innerHTML = '<p>すべてのジャンルを表示します。</p>';
+        return;
+      }
+
+      fetch(`${genre}.json`)
+        .then(res => res.json())
+        .then(data => {
+          files = data;
+          resultsDiv.innerHTML = `<p>検索対象：${genre}</p>`;
+        })
+        .catch(() => {
+          resultsDiv.innerHTML = `<p>${genre}.json の読み込みに失敗しました。</p>`;
+        });
+    }
+
+    function normalize(str) {
+  return str.normalize("NFKC").toLowerCase().replace(/\s+/g, '');
+}
+
+
+   function searchFiles() {
+  const keyword = document.getElementById('searchInput').value.trim();
   const resultsDiv = document.getElementById('results');
   resultsDiv.innerHTML = '';
+
+  if (!files.length) {
+    resultsDiv.innerHTML = '<p>ジャンルを選択してください</p>';
+    return;
+  }
 
   if (!keyword) {
     resultsDiv.innerHTML = '<p>キーワードが入力されていません。</p>';
     return;
   }
 
-    const matched = files.filter(f =>
-        f.title.toLowerCase().includes(keyword) || f.file.toLowerCase().includes(keyword)
-      );
+  const firstChar = normalize(keyword).charAt(0);
+  const matched = [];
 
-      if (matched.length === 0) {
-        resultsDiv.innerHTML = '<p>一致するファイルがありません。</p>';
-      } else {
-matched.forEach(f => {
-  const resultBlock = document.createElement('div');
-  resultBlock.innerHTML = `
-    <strong>${f.title}</strong><br>
-    <a href="${f.file}">${f.file}</a>
-    <hr>
-  `;
-  resultsDiv.appendChild(resultBlock);
-});
+  files.forEach(f => {
+    const title = normalize(f.title);
+    const file = normalize(f.file);
 
+    // 文字列を空白などで分割して、各単語の先頭と一致するかチェック
+    const titleWords = title.split(/[\s　・,、。！？]/);
+    const fileWords = file.split(/[\s　・,、。！？]/);
+
+    const titleMatch = titleWords.some(word => word.startsWith(firstChar));
+    const fileMatch = fileWords.some(word => word.startsWith(firstChar));
+
+    if (titleMatch || fileMatch) {
+      matched.push(f);
+    }
+  });
+
+  if (matched.length === 0) {
+    resultsDiv.innerHTML = '<p>見つかりませんでした</p>';
+  } else {
+    matched.forEach(f => {
+      const block = document.createElement('div');
+      block.innerHTML = `
+        <strong>${f.title}</strong><br>
+        <a href="${f.file}">${f.file}</a>
+        <hr>
+      `;
+      resultsDiv.appendChild(block);
+    });
   }
 }
 
-  </script>
- 
 
-</ul>
-</div>
-</aside>
-<footer>all rights reserved ©watatawa Software 2021~2025</footer>
+
+    window.addEventListener('DOMContentLoaded', () => {
+    loadGenreData(); // 選択されている value="files" を読み込む
+  });
+  </script>
+</body>
+</html>
