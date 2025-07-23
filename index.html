@@ -15,6 +15,40 @@
     height: 1.4em;
 }
 
+body {
+  background-color: rgb(248, 249, 230);
+
+}
+
+#text {
+    background: linear-gradient(to bottom, #ffffff, #ffffff);
+}
+
+
+details {
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  padding: 0.5em 0.5em 0;
+}
+
+summary {
+  font-weight: bold;
+  margin: -0.5em -0.5em 0;
+  padding: 0.5em;
+}
+
+details[open] {
+  padding: 0.5em;
+}
+
+details[open] summary {
+  border-bottom: 1px solid #aaa;
+  margin-bottom: 0.5em;
+}
+
+h3{
+  color: rgb(95, 95, 95);
+}
  
  
 
@@ -51,22 +85,69 @@
           <option value="ウェブサイト">ウェブサイト</option>
           <option value="掲示板スレッド">掲示板スレッド</option>
         </select>
-
-        　
+　
         <input type="text" id="searchInput" placeholder="キーワードを入力">
         <button onclick="searchFiles()">検索　　</button>
         <div id="results"></div>
 
         <hr>
-        <p>制作目標</p>
-        <p>ソーシャルの作成</p>
-        <p>ドメインの変更</p>
-        <p>みんなに宣伝</p>
+        <p>わたたわのホームページへようこそ！</p>
+        <p>初めての方は利用規約でも読んでましょう！➡<a href="riyoukiyaku.html">読んで！</a></p>
+        <p>バグや不明な点はお問い合わせフォームで聞いてね！</p>
+     <details>
+  <summary>詳細</summary>
+隠れツツミ
+</details>
+<h3>各サービスの利用方法</h3>
+        <p>まだアカウントを持っていない方は<a href="create.html">作成</a>しましょう</p>
+        <h4>掲示板の利用方法</h4>
+        <p>まず<a href="post.html">掲示板</a>へアクセス</p>
+        <p>名前は卑猥なものでなければなんでもいいです。なりすまし防止のためトリップは名前以外のものに設定しておいてください。スレッドは作成したのち
+          展開ボタンを押して投稿しましょう（わかりやすいため）他のスレッドも同様です。
+        </p>
+        <h4>チャットの利用方法</h4>
+        <p>まず<a href="chat.html">掲示板</a>へアクセス</p>
+        <p>作成したアカウントでサインインします。するとようこそと歓迎するアカウントが出迎えてくれます。ほかの人と連絡を取るにはお互いにニックネームを
+          追加する必要があります。でなければ相手に一切の通知が行きません（メッセージ自体はサーバーに保存されており追加すると互いに表示されます。画像の送信は
+          可能ですがファイル名が日本語だとなぜか送れません。）
+        </p>
+                <h4>ソーシャルの利用方法</h4>
+        <p>まず<a href="social.html">ソーシャル</a>へアクセス</p>
+        <p>サインインします。すると3D空間が出現します。謎の構造物がある以外には特に機能はありません。ほかの参加者は3Dモデルで表示され上にチャットの
+          ニックネームと同じユーザー名が表示されます。理論上は何人でも入れる設計なのでぜひ楽しんでください
+        </p>
+<hr>
+<h3>話題のニュース</h3>
+<video src="guff.mp4" controls width="300" height="200"></video>
+<p>このガフ可愛すぎやろ</p>
+<hr>
 
-        <h4>お知らせ</h4>
-        <h3>新しく1:1でチャットができるようになりました。</h3>
+<h3>互換性等に関する警告</h3>
+<h4>対応ブラウザー</h4>
+<p>本ウェブぺージは暗号化された通信方式(https)を利用しています。そのためインターネットエクスプローラー (IE) 6.0などの極端に古いバージョンのブラウザで
+  開こうとすると対応していないため開けない場合があります。また本ウェブサイトを最大限に利用する際、できる限り新しいブラウザで実行してください。
+  JavaScriptが正常に機能しない場合があります。
+</p>
+
+<hr>
+        <h3>お知らせ</h3>
+        <h4>新しく1:1でチャットができるようになりました。</h4>
         <h4>掲示板のUIを変更</h4>
-        <p>なんかトップページのくせに情報量少なすぎて草</p>
+      <details> <summary><strong>お知らせの詳細</strong></summary>
+<ul>
+  <il>ソーシャルで構造物を追加</il>
+  <hr>
+  <il>トップページのデザインを変更</il>
+  <hr>
+  <li>チャット　着信出来ないバグを修正</li>
+  <hr>
+  <li>チャットのULを一新</li>
+  <hr>
+  <li>スレッド検索機能を追加</li>
+</ul>
+</details>
+               <p>おしらせ絶対ページの上部に設置すべきだっただろ。速報性皆無で草。</p>
+               <p>自分に悪口言ってて草</p>
         <img src="okok.jpg" width="184" height="31" alt="自由利用マーク">
         <img src="ie.gif" width="90" height="70" alt="ie">
       </div>
