@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+  <script src="https://unpkg.com/aframe-mirror-component@1.0.1/dist/aframe-mirror-component.min.js"></script>
+
   <meta charset="UTF-8" />
   <title>ソーシャル</title>
   <link rel="icon" href="icon.png" type="image/x-icon" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <link rel="stylesheet" href="index.css">
+
   <style>
     
     body { margin: 0; background: #fff; font-family: sans-serif; }
@@ -41,24 +43,288 @@
       transition: opacity 0.5s ease;
     }
     
+    
   </style>
+  <style>  
+
+
+
+body {
+    background-color: var(--darker-background-color) !important;
+ 
+    margin: 0
+}
+
+
+
+</style>
+<style>:root {
+    --link-color: #4bacd2;
+    --background-color: white;
+    --dark-background-color: #f5f8fa;
+    --darker-background-color: #f5f8fa;
+    --almost-black: #292f33;
+    --border: #e1e8ed;
+    --darker-gray: #66757f;
+    --default-text-color: black;
+}
+
+
+
+
+
+
+#navbar {
+    position: fixed;
+    background-color: var(--background-color);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+    height: 46px;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    z-index: 100;
+    font-size: 13px;
+    color: var(--darker-gray);
+    padding-right: calc(100vw - 100%);
+}
+
+#navbar-line {
+    top: 46px;
+    position: fixed;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    height: 1px;
+    width: 100%;
+    z-index: 99;
+    left: 0;
+}
+
+#navbar-container {
+    margin: 0 auto;
+    max-width: 1222px;
+}
+
+
+
+
+
+
+
+
+#navbar a {
+    color: var(--darker-gray);
+    text-decoration: none;
+    z-index: 98;
+}
+
+#navbar a:hover {
+    color: var(--link-color);
+}
+
+#navbar-links a {
+    padding: 13px 15px;
+    /*padding-bottom: 16px;*/
+    top: 8px;
+    position: relative;
+    /* border-bottom: 3px solid transparent; */
+    transition: 0.2s;
+}
+
+/* To add new CSS styles to .menu-active. */
+#navbar-links a.menu-active {
+    padding-bottom: 16px;
+}
+
+
+#navbar-links a:hover {
+    box-shadow: 0px -7px 0px -4px var(--link-color) inset;
+    transition: 0.2s;
+    padding-bottom: 16px;
+}
+
+.menu-active {
+    box-shadow: 0px -7px 0px -4px var(--link-color) inset;
+}
+
+.menu-active:before {
+    color: var(--link-color) !important;
+}
+
+
+
+
+
+
+#navbar-links {
+    width: fit-content;
+    margin-left: 7px;
+}
+
+#logo-image {
+    height: 34px;
+    width: 34px;
+    margin-right: 8px;
+    margin-left: 5px;
+    vertical-align: middle;
+    position: relative;
+    top: 2px;
+}
+#logo-icon {
+    padding: 13px 10px;
+}
+
+#results {
+  position: absolute;
+  top: 50px;
+  right: 20px;
+  width: 300px;
+  background-color: rgb(247, 251, 255);
+  border: 1px solid #e4e4e4;
+  padding: 10px;
+  display: none; /* 最初は非表示 */
+  z-index: 1000;
+}
+.text-box {
+   
+  width: 1000px;
+  height: 140;
+  padding: 5px;
+  border: 1px solid #ccc;
+  background-color: #f8f8f8;
+  font-size: 16px;
+  color: #333;
+  line-height: 1.0;
+  border-radius: 4px;
+  white-space: pre-wrap;
+  text-align: left;
+    position: relative;
+  top: 70px;   /* 下に20px移動 */
+  left: 120px;  /* 右に10px移動 */
+}
+
+.message {
+    color: #585858;
+  margin-top: 0.1px;    /* 上の余白を狭く */
+  margin-bottom: 0.1px; /* 下の余白も狭く */
+  line-height: 0.0001;   /* 行間も少し狭く */
+  
+}
+.message:first-child {
+  margin-top: 0;      /* 最初のメッセージは上マージン無し */
+}
+
+a {
+    color: #4bacd2;
+}
+
+
+.text-box {
+  word-wrap: break-word;     /* 単語の途中でも折り返す */
+  white-space: normal;       /* 通常の折り返しを許可 */
+  line-height: 1.4;          /* 行間を適切にする（好みに応じて） */
+  margin: 0;                 /* 余白をなくす（任意） */
+}
+p {
+    color: #676767;
+  word-wrap: break-word;     /* 単語の途中でも折り返す */
+  white-space: normal;       /* 通常の折り返しを許可 */
+  line-height: 1.4;          /* 行間を適切にする（好みに応じて） */
+  margin: 0;                 /* 余白をなくす（任意） */
+}
+
+a {
+  word-wrap: break-word;     /* 単語の途中でも折り返す */
+  white-space: normal;       /* 通常の折り返しを許可 */
+  line-height: 1.4;          /* 行間を適切にする（好みに応じて） */
+  margin: 0;                 /* 余白をなくす（任意） */
+}
+
+
+
+.footer {
+  margin-top: 100px;              /* 上との間隔（必要に応じて調整） */
+  padding: 15px 0;
+  background-color: #222;
+  color: #fff;
+  text-align: center;
+  font-size: 14px;
+  width: 100%;
+      position: relative;
+  top: 173px;   /* 下に20px移動 */
+ 
+
+
+}
+
+
+a {
+    font-size: 10pt;
+    font-family: "Arial", "Helvetica", sans-serif;
+ 
+    margin: 0px;
+    padding: 0px;
+}
+
+
+h2 {
+    font-size: 15pt;
+    color: #585858;
+    font-family: "Arial", "Helvetica", sans-serif;
+ 
+    margin: 0px;
+    padding: 0px;
+}
+
+
+
+</style>
 </head>
 <body>
     <div id="outer">
     <header>
-      <div id="header-inner">
-        <h1>watatawa Software</h1>
-        <a href="index.html">トップページ</a> ｜<a href="market.html">マーケット【ガフ市】</a> ｜ 
-        <a href="download.html">ダウンロード</a> ｜ <a href="post.html">掲示板</a> ｜  
-        <a href="guff.html">ガフ札情報</a> ｜<a href="guffimage.html">ガフの写真集</a> ｜ 
-        <a href="chat.html">チャット</a>｜ <a href="social.html">ソーシャル</a>
+     <div id="navbar">   
+    <div id="navbar-container">
+    
+        <div id="navbar-links">
+
+                   <a href="index.html" id="logo-icon">
+        <img src="iconnew.png" alt="アイコン" id="logo-image">
+    </a>
+    　　   <a href="index.html" ><span>ホーム</span></a>
+    <a href="oshirase.html" ><span>お知らせ</span></a>
+          
+            <a href="chat.html" ><span>チャット</span></a>
+          <a href="social.html" id="home" class="menu-active"><span class="nav-text">ソーシャル</span></a>
+            <a href="post.html" ><span>掲示板</span></a>
+            <a href="market.html" ><span>マーケット</span></a>
+
+                 <label>言語：</label>
+        <select id="language">
+          <option value="japanese">日本語</option>
+        </select>
+
+        <label>ジャンル：</label>
+        <select id="genre" onchange="loadGenreData()">
+          <option value="すべて">すべて</option>
+          <option value="ウェブサイト">ウェブサイト</option>
+          <option value="掲示板スレッド">掲示板スレッド</option>
+        </select>
+　
+       <input type="text" id="searchBox" placeholder="キーワードを入力">
+
+        <button onclick="searchFiles()">検索　　</button>
+        </div>
+         <div id="results"></div>
+     </div>
+     </div>
       </div>
     </header>
   </div>
+  
+
 
   <div id="login-form">
     <h2>ソーシャルへサインイン</h2>
-    <p>ソーシャルアカウントでサインインしてください</p>
+    <p>ソーシャルアカウントでサインイン</p>
     <input type="text" id="nickname" placeholder="ニックネーム" />
     <input type="password" id="password" placeholder="パスワード" />
     <button id="signin-button">サインイン</button>
@@ -80,7 +346,11 @@
   </div>
 
   <a-scene id="a-scene" embedded>
+    
+
+
     <a-assets>
+            <a-asset-item id="mirror-player" src="other.glb"></a-asset-item>
       <a-asset-item id="treeModel" src="tree.glb"></a-asset-item>
       <a-asset-item id="houseModel" src="house.glb"></a-asset-item>
       <a-asset-item id="stopModel" src="stop.glb"></a-asset-item>
@@ -179,9 +449,9 @@
           receive-shadow="true">
 </a-entity>
 
-   
-</a-scene>
+ 
 
+</a-scene>
 
     <a-sky color="#222"></a-sky>
     <a-light type="directional" position="1 3 2" intensity="1"></a-light>

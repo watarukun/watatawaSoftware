@@ -7,10 +7,204 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="ページの説明">
 <meta name="keywords" content="ページのキーワードA,B,C">
-<link rel="stylesheet" href="index.css">
+
 <meta charset="UTF-8" />
 <audio id="remote-audio" autoplay></audio>
+
 <style>
+  
+body {
+    background-color: var(--darker-background-color) !important;
+ 
+    margin: 0
+}
+
+
+
+</style>
+<style>:root {
+    --link-color: #4bacd2;
+    --background-color: white;
+    --dark-background-color: #f5f8fa;
+    --darker-background-color: #f5f8fa;
+    --almost-black: #292f33;
+    --border: #e1e8ed;
+    --darker-gray: #66757f;
+    --default-text-color: black;
+}
+
+
+
+
+
+
+#navbar {
+    position: fixed;
+    background-color: var(--background-color);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+    height: 46px;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    z-index: 100;
+    font-size: 13px;
+    color: var(--darker-gray);
+    padding-right: calc(100vw - 100%);
+}
+
+#navbar-line {
+    top: 46px;
+    position: fixed;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    height: 1px;
+    width: 100%;
+    z-index: 99;
+    left: 0;
+}
+
+#navbar-container {
+    margin: 0 auto;
+    max-width: 1222px;
+}
+
+
+
+
+
+
+
+
+#navbar a {
+    color: var(--darker-gray);
+    text-decoration: none;
+    z-index: 98;
+}
+
+#navbar a:hover {
+    color: var(--link-color);
+}
+
+#navbar-links a {
+    padding: 13px 15px;
+    /*padding-bottom: 16px;*/
+    top: 8px;
+    position: relative;
+    /* border-bottom: 3px solid transparent; */
+    transition: 0.2s;
+}
+
+/* To add new CSS styles to .menu-active. */
+#navbar-links a.menu-active {
+    padding-bottom: 16px;
+}
+
+
+#navbar-links a:hover {
+    box-shadow: 0px -7px 0px -4px var(--link-color) inset;
+    transition: 0.2s;
+    padding-bottom: 16px;
+}
+
+.menu-active {
+    box-shadow: 0px -7px 0px -4px var(--link-color) inset;
+}
+
+.menu-active:before {
+    color: var(--link-color) !important;
+}
+
+
+
+
+
+
+#navbar-links {
+    width: fit-content;
+    margin-left: 7px;
+}
+
+#logo-image {
+    height: 34px;
+    width: 34px;
+    margin-right: 8px;
+    margin-left: 5px;
+    vertical-align: middle;
+    position: relative;
+    top: 2px;
+}
+#logo-icon {
+    padding: 13px 10px;
+}
+
+#results {
+  position: absolute;
+  top: 50px;
+  right: 20px;
+  width: 300px;
+  background-color: rgb(247, 251, 255);
+  border: 1px solid #e4e4e4;
+  padding: 10px;
+  display: none; /* 最初は非表示 */
+  z-index: 1000;
+}
+.upside {
+   
+  position: absolute;
+
+  top: 80px;  
+  height: auto;            /* 上から20pxに固定 */
+  left: 180px;              /* 中央に配置 */
+  transform: translateX(-50%);
+  width: 300px;
+  padding: 10px;
+  position: fixed;
+
+  background-color: #f7fdff;
+  border: 1px solid rgb(215, 215, 215);
+  border-radius: 4px;
+  font-size: 16px;
+  z-index: 1000;  
+}
+
+
+
+.message {
+    color: #585858;
+  margin-top: 0.1px;    /* 上の余白を狭く */
+  margin-bottom: 0.1px; /* 下の余白も狭く */
+  line-height: 0.0001;   /* 行間も少し狭く */
+  
+}
+.message:first-child {
+  margin-top: 0;      /* 最初のメッセージは上マージン無し */
+}
+
+a {
+    color: #4bacd2;
+}
+
+
+
+.text-box {
+  word-wrap: break-word;     /* 単語の途中でも折り返す */
+  white-space: normal;       /* 通常の折り返しを許可 */
+  line-height: 1.4;          /* 行間を適切にする（好みに応じて） */
+  margin: 0;                 /* 余白をなくす（任意） */
+}
+p {
+    color: #676767;
+  word-wrap: break-word;     /* 単語の途中でも折り返す */
+  white-space: normal;       /* 通常の折り返しを許可 */
+  line-height: 1.4;          /* 行間を適切にする（好みに応じて） */
+  margin: 0;                 /* 余白をなくす（任意） */
+}
+
+a {
+  word-wrap: break-word;     /* 単語の途中でも折り返す */
+  white-space: normal;       /* 通常の折り返しを許可 */
+  line-height: 1.4;          /* 行間を適切にする（好みに応じて） */
+  margin: 0;                 /* 余白をなくす（任意） */
+}
 
   #messages div {
     display: block;
@@ -55,17 +249,11 @@
   .delete-btn:hover {
     color: #f00;
   }
-  img {
-    max-width: 200px;
-    display: block;
-    margin-top: 4px;
-  }
+ 
   input, button {
     box-sizing: border-box;
   }
-  #chat {
-    display: none;
-  }
+
   #partner-list {
     margin-bottom: 6px;
   }
@@ -96,13 +284,14 @@
     color: #f00;
   }
   #partner-add {
-    color: #313131;
+    color: #ffffff;
     display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
+    gap: 4px;
+
+    margin-bottom: 2px;
   }
   #partner-add input {
-    color: #313131;
+    color: #ffffff;
     flex-grow: 1;
     padding: 8px;
   }
@@ -139,7 +328,7 @@
     font-weight: bold;
   }
   #send-btn:hover {
-    background-color: rgb(146, 146, 146);
+    background-color: rgba(146, 146, 146, 0.263);
   }
    #call-btn {
     background-color: #4a4a4a00;
@@ -151,16 +340,18 @@
     font-weight: bold;
   }
   #call-btn:hover{
-    background-color: #9a9a9a;
+    background-color: #9a9a9a54;
   }
    #logout-btn {
-    background-color: #ffffff77;
+    background-color: #ff94948f;
     border: none;
     color: rgb(0, 0, 0);
     padding: 4px 4px;
     border-radius: 2px;
     cursor: pointer;
     font-weight: bold;
+    position: relative;
+    left: 20px;
   }
    body { margin: 0; background: #fff; font-family: sans-serif; }
 
@@ -185,12 +376,12 @@
 
            .row {
       border: 1.5px solid rgb(195, 195, 195);
-      background-color: #6f6f6f;
+      background-color: #80bdd5;
       padding: 4px;
-      width: 535px;
-      margin: 70px auto;
+      width: 50px;
+      margin: 10px auto;
       display: none;
-    
+    position: relative;
       gap: 10px;
     }
       .row {
@@ -199,25 +390,28 @@
   }
        .userinfo {
     display: flex;
-    gap: 222px; /* 要素間の隙間 */
+    gap: auto; /* 要素間の隙間 */
     border: 1px solid rgb(255, 255, 255);
       background-color: #ffffff;
-      padding: 3px;
-      width: 520px;
+
       display: flex;
+        margin: 0 auto; /* 左右中央寄せ */
+  width: auto;  
  
   
     
 
   }
 
+
+
    
  #new-partner {
-  background-color: #f1f1f1;
+  background-color: #f7f7f7;
   
     flex-grow: 1;
     padding: 8px;
-    height: 3em; /* 2行分くらい */
+    height: 2em; /* 2行分くらい */
     resize: none;
     border-radius: 4px;
     border: none;
@@ -226,11 +420,11 @@
   }
   
       #add-partner-btn {
-    background-color: #f1f1f1;
+    background-color: #ffffff00;
     border: none;
     color: rgb(77, 77, 77);
     padding: 8px 16px;
-    border-radius: 4px;
+    border-radius: 3px;
     cursor: pointer;
     font-weight: bold;
   }  
@@ -258,27 +452,115 @@
 }
 
 
+.footer {
+  margin-top: 100px;              /* 上との間隔（必要に応じて調整） */
+  padding: 15px 0;
+  background-color: #222;
+  color: #fff;
+  text-align: center;
+  font-size: 14px;
+  width: 100%;
+      position: relative;
+  top: 173px;   /* 下に20px移動 */
+ 
+
+
+}
+  #chat {
+        font-size: 10pt;
+      width: 800px;              /* 必要に応じて調整 */
+      height: 600px;             /* 高さを制限して */
+      overflow-y: auto;          /* 縦方向スクロールを有効にする */
+      border: 1px solid #ccc;    /* 枠線（任意） */
+      padding: 10px;
+      background: #f9f9f9;
+      display: none;
+        width: 60%;   
+            position: relative;
+  top: 80px; 
+  left: 400px;
+
+
+
+
+    }
+
+      .row {
+        font-size: 10pt;
+      width: 500px;              /* 必要に応じて調整 */
+      height: auto;             /* 高さを制限して */
+      overflow-y: auto;          /* 縦方向スクロールを有効にする */
+   
+   
+            position: relative;
+  top: 60px; 
+    margin: 0 auto; /* 左右中央寄せ */
+    left: 369px;
+  width: 251%;   
+
+
+    }
+h2 {
+    font-size: 15pt;
+    color: #585858;
+    font-family: "Arial", "Helvetica", sans-serif;
+ 
+    margin: 0px;
+    padding: 0px;
+}
+    
+
+a {
+    font-size: 10pt;
+    font-family: "Arial", "Helvetica", sans-serif;
+ 
+    margin: 0px;
+    padding: 0px;
+}
+
+
+
     
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js" defer></script>
-</head>
-<body>
-    <div id="outer">
-<header><div id="header-inner"><h1>watatawa Software</h1><a href="index.html">トップページ</a> ｜<a href="market.html">マーケット【ガフ市】</a> ｜ <a href="download.html">ダウンロード</a>  ｜ <a href="post.html">掲示板</a> ｜  <a href="guff.html">ガフ札情報</a>  ｜<a href="guffimage.html">ガフの写真集</a> ｜ <a href="chat.html">チャット</a>｜ <a href="social.html">ソーシャル</a>
-</div></header>
+
+   <header><div id="navbar">   
+    <div id="navbar-container">
+    
+        <div id="navbar-links">
+
+                   <a href="index.html" id="logo-icon">
+        <img src="iconnew.png" alt="アイコン" id="logo-image">
+    </a>
+    　　   <a href="index.html" ><span>ホーム</span></a>
+    <a href="oshirase.html" ><span>お知らせ</span></a>
+            <a href="chat.html" id="home" class="menu-active"><span class="nav-text">チャット</span></a>
+          
+          
+            <a href="social.html" ><span>ソーシャル</span></a>
+            <a href="post.html" ><span>掲示板</span></a>
+            <a href="market.html" ><span>マーケット</span></a>
+
+            <a style="color: #585858;">watatawa CHAT ver 2.1 (JavaScript)</a>
+            </div>
+            </div>
+            </div>
+            </header>
+            </head>
+
 <main><div id="text">
 <div id="auth">
  <h2>チャット</h2>
  <p>ソーシャルアカウントでサインイン</p>
-  <input id="nickname" placeholder="ニックネーム" />
-  <input id="password" type="password" placeholder="パスワード" />
+  <input id="nickname" placeholder="ニックネーム">
+  <input id="password" type="password" placeholder="パスワード">
   <button id="signup-btn"></button>
  
   <button id="login-btn">サインイン</button>
      <div style="white-space: nowrap;">
 <br>
-  <a href="otoiawase.html">パスワードを忘れた場合</a>｜
-  <a href="create.html">アカウントを作成</a>
+  <a href="https://watatawasoftware.onrender.com/otoiawase.html">パスワードを忘れた場合</a>｜
+  <a href="https://watatawasoftware.onrender.com/create.html">アカウントを作成</a>
     
  
  
@@ -287,16 +569,9 @@
 </div>
 
 <div id="chat">
-  <div class="userinfo">
-  <p>サインイン中: <span id="my-nickname"></span></p> 
-    <button id="logout-btn">サインアウト</button>
-    </div>
-    <hr>
-    <p>トークルームにユーザーを追加</p>
-  <div id="partner-add">
-    <input id="new-partner" placeholder="ニックネームで追加" />
-    <button id="add-partner-btn">追加</button>
-  </div>
+  
+  
+  <p>To: <span id="current-partner"></span></p>
   <div id="call-popup" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%);
  background:white; border:1px solid #ccc; padding:20px; text-align:center; z-index:9999;">
   <div id="call-status">接続中...</div>
@@ -304,48 +579,80 @@
   <button id="end-call-btn" style="margin-top:10px;">通話終了</button>
 </div>
 
-  <div id="partner-list" title="トーク相手を変更"></div>
 
-  <p>To: <span id="current-partner"></span></p>
 
   <p id="unread-badge" style="color: red;"></p>
 
   <div id="messages"></div>
 
 
- <div class="row">
-  <input id="msg" placeholder="メッセージ" />
+<div class="upside">
+  <div class="userinfo">
+  <p style="color: #4bacd2;">サインイン中: <span id="my-nickname"></span></p> 
+    <button id="logout-btn">サインアウト</button>
+    </div>
+    <hr>
+    <p style="color: #a2bec9;">トークルームにユーザーを追加</p>
+  <div id="partner-add">
+    <input id="new-partner" placeholder="ニックネームで追加">
+    <button id="add-partner-btn">追加</button>
+
+
+  </div>
+     <p style="color: #66757f; font-size: 10px;">※連絡を取り合うにはお互いが追加し合う必要があります</p>
+  <hr>
+  <p>友達</p>
+    <div id="partner-list" title="トーク相手を変更"></div>
+     <p style="color: #66757f; font-size: 13px;">Created by watatawa Software　　watatawa CHAT 本サービスご利用の際は必ず読んでください<a href="riyoukiyaku.html">利用規約</a>　
+      　制作：わたっちー　©2021~2025</p>
+     <div class="row">
+  <input id="msg" placeholder="メッセージ">
 
   <button id="send-btn" title="メッセージを送信">＞</button><button id="call-btn" title="音声通話を発信">☎</button>
  
 <input type="file" id="file" accept="image/*,video/*" style="color: #f1f1f1;"> 
  </div>
-
-<hr>
-
-
+</div>
 
 </div>
+
 
 </div>
 </main>
-<aside>
-<div class="side-title">menu</div>
-<a href="otoiawase.html">お問い合わせフォーム</a>
-<br>
-<a href="riyoukiyaku.html">利用規約</a>
-<div class="side">
-<ul>
+
+
+
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+
+</div>
+
+
+</main>
+<footer class="footer">
+          <a href="otoiawase.html">お問い合わせフォーム</a><br>
+      <a href="riyoukiyaku.html">利用規約</a>
+  <p>all rights reserved ©watatawa Software 2021~2025</p>
+</footer>
+
+
     <audio id="call-audio" src="call.mp3" preload="auto"></audio>
 
- 
+ </div>
+ </div>
+ </div>
 
-</ul>
-</div>
-</aside>
-<footer>all rights reserved ©watatawa Software 2021~2025</footer>
 
-<script defer>
+
+
+<script defer="">
     const displayedMessageIds = new Set();  // ← すでに表示されたメッセージIDを記録
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -911,5 +1218,6 @@ supabaseClient.channel("calls")
 
 </script>
 
-</body>
-</html>
+
+
+</div></body></html>
