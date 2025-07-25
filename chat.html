@@ -153,9 +153,9 @@ body {
 
   top: 80px;  
   height: auto;            /* 上から20pxに固定 */
-  left: 180px;              /* 中央に配置 */
+  left: 210px;              /* 中央に配置 */
   transform: translateX(-50%);
-  width: 300px;
+  width: 340px;
   padding: 10px;
   position: fixed;
 
@@ -452,6 +452,7 @@ a {
 }
 
 
+
 .footer {
   margin-top: 100px;              /* 上との間隔（必要に応じて調整） */
   padding: 15px 0;
@@ -478,7 +479,7 @@ a {
         width: 60%;   
             position: relative;
   top: 80px; 
-  left: 400px;
+  left: 440px;
 
 
 
@@ -495,8 +496,8 @@ a {
             position: relative;
   top: 60px; 
     margin: 0 auto; /* 左右中央寄せ */
-    left: 369px;
-  width: 251%;   
+    left: 405px;
+  width: 221%;   
 
 
     }
@@ -517,6 +518,8 @@ a {
     margin: 0px;
     padding: 0px;
 }
+
+
 
 
 
@@ -1214,8 +1217,22 @@ supabaseClient.channel("calls")
   
 });
 
+function updateRowPosition() {
+  const row = document.querySelector('.row');
+  const scrollY = window.scrollY;
+  const maxOffset = 180;  // 初期位置（上の方）
+  const minOffset = -10;   // 一番下での位置
 
+  const newTop = Math.max(minOffset, maxOffset - scrollY / 4);
+  row.style.top = `${newTop}px`;
+}
 
+// スクロール時に呼び出す
+window.addEventListener('scroll', updateRowPosition);
+
+// 初回読み込み時にも位置を反映
+window.addEventListener('load', updateRowPosition);
+</script>
 </script>
 
 
