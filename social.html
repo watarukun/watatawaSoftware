@@ -68,6 +68,9 @@ body {
     --darker-gray: #66757f;
     --default-text-color: black;
 }
+a {
+    text-decoration: none;
+}
 
 
 
@@ -991,7 +994,102 @@ setInterval(() => {
   }
 }, 1000);
 
+let files = [];
+const searchBox = document.getElementById('searchBox');
+const resultsDiv = document.getElementById('results');
+const searchButton = document.querySelector('button');
 
+function loadGenreData() {
+  const genre = document.getElementById('genre').value;
+  resultsDiv.innerHTML = '';
+
+  if (!genre) {
+    files = [];
+    resultsDiv.innerHTML = '<p>すべてのジャンルを表示します。</p>';
+    return;
+  }
+
+  fetch(`${genre}.json`)
+    .then(res => res.json())
+    .then(data => {
+      files = data;
+      resultsDiv.innerHTML = `<p>検索対象：${genre}</p>`;
+    })
+    .catch(() => {
+      resultsDiv.innerHTML = `<p>${genre}.json の読み込みに失敗しました。</p>`;
+    });
+}
+
+function normalize(str) {
+  return str.normalize("NFKC").toLowerCase().replace(/\s+/g, '');
+}
+
+function searchFiles() {
+  const keyword = searchBox.value.trim();
+  resultsDiv.innerHTML = '';
+
+  if (!files.length) {
+    resultsDiv.innerHTML = '<p>ジャンルを選択してください</p>';
+    resultsDiv.style.display = 'block';
+    return;
+  }
+
+  if (!keyword) {
+    resultsDiv.innerHTML = '<p>キーワードが入力されていません。</p>';
+    resultsDiv.style.display = 'block';
+    return;
+  }
+
+  const firstChar = normalize(keyword).charAt(0);
+  const matched = [];
+
+  files.forEach(f => {
+    const title = normalize(f.title);
+    const file = normalize(f.file);
+
+    const titleWords = title.split(/[\s　・,、。！？]/);
+    const fileWords = file.split(/[\s　・,、。！？]/);
+
+    const titleMatch = titleWords.some(word => word.startsWith(firstChar));
+    const fileMatch = fileWords.some(word => word.startsWith(firstChar));
+
+    if (titleMatch || fileMatch) {
+      matched.push(f);
+    }
+  });
+
+  if (matched.length === 0) {
+    resultsDiv.innerHTML = '<p>見つかりませんでした</p>';
+  } else {
+    matched.forEach(f => {
+      const block = document.createElement('div');
+      block.innerHTML = `
+        <strong>${f.title}</strong><br>
+        <a href="${f.file}">${f.file}</a>
+        <hr>
+      `;
+      resultsDiv.appendChild(block);
+    });
+  }
+
+  resultsDiv.style.display = 'block'; // ← ここで表示！
+}
+
+// 外をクリックしたら非表示（ただし検索欄とボタン・結果は除外）
+document.addEventListener('click', function(event) {
+  const isInside =
+    resultsDiv.contains(event.target) ||
+    searchBox.contains(event.target) ||
+    searchButton.contains(event.target);
+
+  if (!isInside) {
+    resultsDiv.style.display = 'none';
+  }
+});
+
+window.addEventListener('DOMContentLoaded', () => {
+  loadGenreData();
+});
 
 </script>
 
