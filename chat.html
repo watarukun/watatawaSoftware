@@ -7,6 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="ページの説明">
 <meta name="keywords" content="ページのキーワードA,B,C">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.6/dist/umd/supabase.min.js"></script>
 
 <meta charset="UTF-8" />
 <audio id="remote-audio" autoplay></audio>
@@ -569,10 +570,24 @@ a {
 }
 .kaihi{
   font-size: 16px;
+   cursor: pointer; 
 }
 .kaihi:hover{
   background-color: #80bdd561;
 }
+
+   .pass {
+      background-color: rgb(37, 37, 37);
+      color: black; /* 背景と同化させて一見見えないように */
+      transition: all 0.3s ease;
+         cursor: pointer; 
+    }
+
+    .pass:hover {
+      background-color: transparent; /* 背景を消す */
+      color: white; /* 明瞭にする（任意の色でOK） */
+         cursor: pointer; 
+    }
 
 
 </style>
@@ -607,12 +622,17 @@ document.addEventListener("DOMContentLoaded", () => {
    <p style="color: #4bacd2;">サインイン中: <span id="show-nicname"></span></p> 
 
    <hr>
-   <p>アカウントの削除またはパスワードの変更はお問い合わせフォームから申し込みください。</p>
-
-    
+   <a style="font-size: 11px; color: #d49f86;">この情報は非公開です。ほかの人に共有、掲示板での拡散はしないでください</a>
+     <p class="pass" style="color: #646464;">パスワード: <span style="color: rgb(37, 37, 37);" id="passw"></span></p> 
+  <p class="pass" style="color: #646464;">誕生日: <span style="color: rgb(37, 37, 37);" id="date"></span></p> 
+   <p class="pass" style="color: #646464;">メールアドレス: <span style="color: rgb(37, 37, 37);" id="email"></span></p> 
+   <br>
+    <hr>
    
-    
-  
+    <p style="font-size: 14px;">パスワード、メールアドレスの変更機能はまだ実装してません。変更したい場合はお問い合わせフォームより申請してください。</p>
+  <br>
+  <hr>
+  <button style="color: red;" id="delete_account">アカウントを削除</button>
   </div>
 </div>
 
@@ -750,13 +770,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-<script defer="">
+<script defer="module">
     const displayedMessageIds = new Set();  // ← すでに表示されたメッセージIDを記録
 
 document.addEventListener("DOMContentLoaded", () => {
   const supabaseUrl = "https://mbjvhxpozxylwcemnbcr.supabase.co";
   const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ianZoeHBvenh5bHdjZW1uYmNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIxMzM3MzAsImV4cCI6MjA2NzcwOTczMH0.JddcQ5SoHfR-OWGma__X8iP0OphdnLHOPdYjm3Ca2Qo";
   const supabaseClient = supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+
 
   let currentUser = null;
   let currentPartner = null;
@@ -813,6 +835,8 @@ document.addEventListener("DOMContentLoaded", () => {
   async function login() {
     const nickname = document.getElementById("nickname").value.trim();
     const password = document.getElementById("password").value;
+        const user_date = document.getElementById("date").value;
+            const email = document.getElementById("email").value;
     if (!nickname || !password) return alert("ニックネームとパスワードを入力してください");
 
     const { data, error } = await supabaseClient
@@ -836,11 +860,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("my-nickname").textContent = currentUser.nickname;
         document.getElementById("show-nicname").textContent = currentUser.nickname;
+          document.getElementById("passw").textContent = currentUser.password;
+                  document.getElementById("date").textContent = currentUser.user_date;
+                            document.getElementById("email").textContent = currentUser.email;
           
 
     if (messagePolling) clearInterval(messagePolling);
     messagePolling = setInterval(loadMessages, 1000);
   }
+
+
+  
 
 async function sendMessage() {
   if (!currentPartner) return alert("会話する相手を選択してください");
@@ -1331,9 +1361,29 @@ window.addEventListener('scroll', updateRowPosition);
 window.addEventListener('load', updateRowPosition);
 
 
+  document.getElementById("delete_account").addEventListener("click", async () => {
+  const confirmDelete = confirm("アカウントを削除しますか？");
+  if (!confirmDelete) return;
+
+
+
+
+
+
+
+    alert("アクセスが拒否されました");
+
+
+
+    
+       
+  }
+);
+
+  
 
 </script>
-</script>
+
 
 
 

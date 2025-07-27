@@ -1,15 +1,16 @@
 <!DOCTYPE html>
-<html lang="ja">
-<head>
-    <link rel="icon" href="icon.png" type="image/x-icon">
-<meta charset="UTF-8">
+<!-- saved from url=(0049)https://watatawasoftware.onrender.com/create.html -->
+<html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="icon" href="https://watatawasoftware.onrender.com/icon.png" type="image/x-icon">
+
 <title>アカウント作成</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="ページの説明">
 <meta name="keywords" content="ページのキーワードA,B,C">
 <link rel="stylesheet" href="index.css">
-<meta charset="UTF-8" />
-<audio id="remote-audio" autoplay></audio>
+
+
+</head><body><audio id="remote-audio" autoplay=""></audio>
 
 
 <style>
@@ -25,11 +26,11 @@
     }
 
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js" defer></script>
-</head>
-<body>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+
     <div id="outer">
-<header><div id="header-inner"><h1>watatawa Software　簡易HTML版</h1><a href="index.html">トップページ</a> ｜<a href="market.html">マーケット【ガフ市】</a> ｜ <a href="download.html">ダウンロード</a>  ｜ <a href="post.html">掲示板</a> ｜  <a href="guff.html">ガフ札情報</a>  ｜<a href="guffimage.html">ガフの写真集</a> ｜ <a href="chat.html">チャット</a>｜ <a href="social.html">ソーシャル</a>
+<header><div id="header-inner"><h1>watatawa Software　簡易HTML版</h1><a href="https://watatawasoftware.onrender.com/index.html">トップページ</a> ｜<a href="https://watatawasoftware.onrender.com/market.html">マーケット【ガフ市】</a> ｜ <a href="https://watatawasoftware.onrender.com/download.html">ダウンロード</a>  ｜ <a href="https://watatawasoftware.onrender.com/post.html">掲示板</a> ｜  <a href="https://watatawasoftware.onrender.com/guff.html">ガフ札情報</a>  ｜<a href="https://watatawasoftware.onrender.com/guffimage.html">ガフの写真集</a> ｜ <a href="https://watatawasoftware.onrender.com/chat.html">チャット</a>｜ <a href="https://watatawasoftware.onrender.com/social.html">ソーシャル</a>
 
 <main><div id="text">
     <div id="login-form">
@@ -37,15 +38,23 @@
 <p>アカウントを作成するとすべてのサービスをご利用いただけます。</p>
 
 <div id="auth"> 
-   <input type="text" id="nickname" placeholder="ニックネーム" />
+  
+   <input type="text" id="nickname" placeholder="ニックネーム">
    <p style="color: #66757f; font-size: 10px;">※あまりにも長いニックネームに設定するとチャットなどで表示される際、レイアウトが崩壊する可能性があります</p>
-    <input type="password" id="password" placeholder="パスワード" />
+       <form autocomplete="off"><input type="email" id="email" placeholder="メールアドレス（任意）"></form>
+       <p style="color: #66757f; font-size: 10px;">※パスワードリセットの際に役立ちます</p>
+   <input type="date" id="birthdate" required  placeholder="生年月日"/>
+      <p style="color: #66757f; font-size: 10px;">※この情報はほかの人には公開されません</p> <!-- 生年月日入力欄 -->
+    <input type="password" id="password" placeholder="パスワード">
+
+    
        <p style="color: #66757f; font-size: 10px;">※パスワードはなるべく予測できないようなものにしてください</p>
+
     <hr>
     
     
   <button id="signup-btn">サインアップ</button><!-- これがないとダメ！ -->
-<input type="checkbox" id="terms-checkbox"> <a href="riyoukiyaku.html">利用規約</a>に同意します
+<input type="checkbox" id="terms-checkbox"> <a href="https://watatawasoftware.onrender.com/riyoukiyaku.html">利用規約</a>に同意します
 
 
 
@@ -63,11 +72,11 @@
 
 </div>
 
-</div>
-</main>
+</main></div>
+
 <aside>
 <div class="side-title">menu</div>
-<a href="otoiawase.html">お問い合わせフォーム</a>
+<a href="https://watatawasoftware.onrender.com/otoiawase.html">お問い合わせフォーム</a>
 <div class="side">
 <ul>
 
@@ -79,7 +88,7 @@
 </aside>
 <footer>all rights reserved ©watatawa Software 2021~2025</footer>
 
-<script defer>
+<script defer="">
     const displayedMessageIds = new Set();  // ← すでに表示されたメッセージIDを記録
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -96,17 +105,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const partnerListEl = document.getElementById("partner-list");
   const currentPartnerEl = document.getElementById("current-partner");
   const unreadBadgeEl = document.getElementById("unread-badge");
+  
 
   document.getElementById("signup-btn").onclick = signup;
-  document.getElementById("login-btn").onclick = login;
-  document.getElementById("send-btn").onclick = sendMessage;
-  document.getElementById("logout-btn").onclick = logout;
-  document.getElementById("add-partner-btn").onclick = addPartner;
+
 
 
   async function signup() {
+        const birthdate = document.getElementById('birthdate').value;
   const nickname = document.getElementById("nickname").value.trim();
   const password = document.getElementById("password").value;
+  const email = document.getElementById("email").value.trim();
   const agreed = document.getElementById("terms-checkbox").checked;
 
   if (!nickname || !password) return alert("ニックネームとパスワードを入力してください");
@@ -125,7 +134,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 新規ユーザー作成
   const { data: newUser, error: insertErr } = await supabaseClient
     .from("users")
-    .insert({ nickname, password })
+         .insert([{ email, nickname, password, user_date: birthdate }])
     .select()
     .single();
 
@@ -211,5 +220,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </script>
 
-</body>
-</html>
+
+
+</header></div></body></html>
