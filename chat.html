@@ -797,9 +797,11 @@ document.addEventListener("DOMContentLoaded", () => {
   <div id="partner-add">
     <input id="new-partner" placeholder="ニックネームで追加">
     <button id="add-partner-btn">追加</button>
+ 
 
 
   </div>
+      <div id="add_error" style="font-size: 14px; color: rgb(225, 55, 55);"></div>
      <p style="color: #66757f; font-size: 10px;">※連絡を取り合うにはお互いが追加し合う必要があります</p>
   <hr>
   <p>友達</p>
@@ -1139,21 +1141,33 @@ async function sendMessage() {
 
   // パートナー一覧をDBに追加（重複チェックはDBのユニーク制約に任せる）
   async function addPartnerToDB(nick) {
-    if (!currentUser) return;
-    if (!nick || partners.includes(nick) || nick === currentUser.nickname) return;
+  if (!currentUser) return;
+  if (!nick || partners.includes(nick) || nick === currentUser.nickname) return;
 
-    const { error } = await supabaseClient
-      .from("user_partners")
-      .insert({ user_id: currentUser.id, partner_nickname: nick });
+  // ユーザーの存在確認
+  const { data: userExists, error: checkError } = await supabaseClient
+    .from("users")  // 実際のユーザーテーブル名に合わせて修正
+    .select("id")
+    .eq("nickname", nick)
+    .single();
 
-    if (error) {
-      if (error.code === "23505") {
-        // 重複エラーは無視
-      } else {
-        alert("パートナー追加失敗: " + error.message);
-      }
-      return;
-    }
+  if (checkError || !userExists) {
+    document.getElementById("add_error").innerText = "ユーザーが見つかりません";
+    return;
+  }
+
+  // 重複チェック済なので追加
+  const { error: insertError } = await supabaseClient
+  
+    .from("user_partners")
+    
+    .insert({ user_id: currentUser.id, partner_nickname: nick });
+    document.getElementById("add_error").innerText = "";
+  if (insertError) {
+    document.getElementById("add_error").innerText = "追加に失敗しました";
+  }
+
+
 
     partners.push(nick);
     renderPartnerList();
@@ -1236,9 +1250,9 @@ async function sendMessage() {
   function addPartner() {
     const input = document.getElementById("new-partner");
     const val = input.value.trim();
-    if (!val) return alert("相手のニックネームを入力してください");
-    if (val === currentUser.nickname) return alert("自分のニックネームは追加できません");
-    if (partners.includes(val)) return alert("すでにリストにあります");
+    if (!val) return       document.getElementById("add_error").innerText = "ニックネームを入力してください";
+    if (val === currentUser.nickname) return  document.getElementById("add_error").innerText = "自分のニックネームは追加できません";
+    if (partners.includes(val)) return  document.getElementById("add_error").innerText = "そのニックネームはすでに追加済みです";
 
     addPartnerToDB(val);
     input.value = "";
@@ -1443,8 +1457,8 @@ supabaseClient.channel("calls")
 function updateRowPosition() {
   const row = document.querySelector('.row');
   const scrollY = window.scrollY;
-  const maxOffset = 180;  // 初期位置（上の方）
-  const minOffset = -10;   // 一番下での位置
+  const maxOffset = 170;  // 初期位置（上の方）
+  const minOffset = -5;   // 一番下での位置
 
   const newTop = Math.max(minOffset, maxOffset - scrollY / 4);
   row.style.top = `${newTop}px`;

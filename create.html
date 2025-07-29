@@ -14,15 +14,34 @@
 
 
 <style>
-        body { margin: 0; background: #fff; font-family: sans-serif; }
+        body { margin: 0; background: #fbfeff; font-family: sans-serif; }
     #login-form {
       border: 3px solid rgb(72, 117, 158);
-      padding: 20px;
-      width: 300px;
+      padding: 10px;
+      width: 290px;
       margin: 100px auto;
       display: flex;
-      flex-direction: column;
-      gap: 10px;
+      flex-direction: none;
+      gap: 1px;
+        background: white;
+
+  
+
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    #nickname,#birthdate,#email,#password{
+          width: 277px;
+  padding: 5px;
+  margin: 10px 0;
+  gap: 1px;
+  
+    }
+
+    #signup-btn{
+          background-color: #1da1f2;
+  color: white;
+  border: none;
+  cursor: pointer;
     }
 
 </style>
@@ -34,11 +53,11 @@
 
 <main><div id="text">
     <div id="login-form">
-<h2>ソーシャルアカウントを作成</h2>
-<p>アカウントを作成するとすべてのサービスをご利用いただけます。</p>
+
 
 <div id="auth"> 
-  
+  <h2>アカウントを作成</h2>
+<p>アカウントを作成するとすべてのサービスをご利用いただけます。</p>
    <input type="text" id="nickname" placeholder="ニックネーム">
    <p style="color: #66757f; font-size: 10px;">※あまりにも長いニックネームに設定するとチャットなどで表示される際、レイアウトが崩壊する可能性があります</p>
        <form autocomplete="off"><input type="email" id="email" placeholder="メールアドレス（任意）"></form>
